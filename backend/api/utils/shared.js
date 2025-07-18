@@ -5,9 +5,9 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 const apiKeys = [
-  process.env.GEMINI_API_KEY1,
-  process.env.GEMINI_API_KEY2,
-  process.env.GEMINI_API_KEY3
+  "AIzaSyBcR6rMwP9v8e2cN56gdnkWMhJtOWyP_uU",
+  "AIzaSyBcR6rMwP9v8e2cN56gdnkWMhJtOWyP_uU",
+  "AIzaSyBcR6rMwP9v8e2cN56gdnkWMhJtOWyP_uU"
 ].filter(Boolean);
 
 const models = (process.env.GEMINI_MODELS || "gemini-1.5-flash-latest,gemini-2.0-flash,gemini-2.5-flash").split(',');
