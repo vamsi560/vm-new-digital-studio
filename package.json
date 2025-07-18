@@ -3,6 +3,10 @@
   "private": true,
   "version": "1.0.0",
   "scripts": {
-    "build": "cd frontend && npm install && npm run build"
+    "install": "npm --prefix frontend install && npm --prefix backend install",
+    "build": "cd frontend && npm run build"
+  },
+  "engines": {
+    "node": ">=18"
   }
 }
