@@ -1,11 +1,11 @@
 // 📁 File: api/generate-from-text.js
 
-const {
+import {
   callGenerativeAI,
   parseJsonWithCorrection,
   toPascalCase,
   buildAppRouterPrompt
-} = require('./utils/shared');
+} from './utils/shared.js';
 
 module.exports = async (req, res) => {
   try {

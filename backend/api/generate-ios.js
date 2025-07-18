@@ -1,10 +1,10 @@
 // 📁 api/generate-ios.js
 
-const formidable = require('formidable');
-const fs = require('fs');
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+import formidable from 'formidable';
+import fs from 'fs';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
+const genAI = new GoogleGenerativeAI("AIzaSyBcR6rMwP9v8e2cN56gdnkWMhJtOWyP_uU");
 
 module.exports = async (req, res) => {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
@@ -17,7 +17,7 @@ module.exports = async (req, res) => {
       const screens = Array.isArray(files.screens) ? files.screens : [files.screens];
       const projectName = fields.projectName || 'ios-ui';
 
-      const model = genAI.getGenerativeModel({ model: 'gemini-pro-vision' });
+      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
       const generatedFiles = {};
       for (let screen of screens) {

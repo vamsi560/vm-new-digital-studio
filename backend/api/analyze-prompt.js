@@ -1,6 +1,6 @@
 // 📁 File: api/analyze-prompt.js
 
-const { callGenerativeAI } = require('./utils/shared');
+import { callGenerativeAI } from './utils/shared';
 
 module.exports = async (req, res) => {
   try {

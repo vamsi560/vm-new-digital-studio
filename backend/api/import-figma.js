@@ -1,6 +1,6 @@
 // 📁 File: api/import-figma.js
 
-const axios = require('axios');
+import axios from 'axios';
 
 function extractFileKey(figmaUrl) {
   // Figma file URLs look like: https://www.figma.com/file/<fileKey>/...

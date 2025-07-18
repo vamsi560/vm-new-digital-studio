@@ -1,6 +1,6 @@
 // 📁 api/download-zip.js
 
-const JSZip = require('jszip');
+import JSZip from 'jszip';
 
 module.exports = async (req, res) => {
   try {
