@@ -1,6 +1,6 @@
 // 📁 File: api/utils/shared.js
 
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+import { GoogleGenerativeAI } from '@google/generative-ai';
 const dotenv = require('dotenv');
 dotenv.config();
 
