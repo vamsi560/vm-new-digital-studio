@@ -10,7 +10,7 @@ const apiKeys = [
   "AIzaSyBcR6rMwP9v8e2cN56gdnkWMhJtOWyP_uU"
 ].filter(Boolean);
 
-const models = (process.env.GEMINI_MODELS || "gemini-1.5-flash-latest,gemini-2.0-flash,gemini-2.5-flash").split(',');
+const models = (process.env.GEMINI_MODELS || "gemini-1.5-flash,gemini-2.0-flash,gemini-2.5-flash").split(',');
 
 const clients = apiKeys.map(key => new GoogleGenerativeAI(key));
 let currentClientIndex = 0;
