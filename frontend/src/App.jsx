@@ -21,13 +21,22 @@ const ServiceCard = ({ title, svgPath, onClick, disabled = false }) => (
 );
 
 
-const WorkflowStatus = ({ status }) => {
+const WorkflowStatus = ({ status, error }) => {
     const agents = [
         { id: 'architect', name: 'Architect', description: 'Analyzing project structure...', icon: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h.01"/><path d="M2 20h4v-4"/><path d="M18 4h4v4"/><path d="M12 4v16"/><path d="M2 12h20"/></svg> },
         { id: 'builder', name: 'Component Builder', description: 'Creating reusable components...', icon: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="6" width="20" height="8" rx="2"/><rect x="6" y="14" width="12" height="8" rx="2"/></svg> },
         { id: 'composer', name: 'Page Composer', description: 'Assembling pages...', icon: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg> },
         { id: 'finisher', name: 'Finisher & QA', description: 'Finalizing app and checking quality...', icon: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg> }
     ];
+
+    if (error) {
+        return (
+            <div className="bg-red-800/50 backdrop-blur-sm p-6 rounded-lg border border-red-700 text-center">
+                <h3 className="text-lg font-bold text-white mb-2">An Error Occurred</h3>
+                <p className="text-red-300">{error}</p>
+            </div>
+        )
+    }
 
     return (
         <div className="bg-gray-800/50 backdrop-blur-sm p-6 rounded-lg border border-gray-700">
@@ -52,6 +61,15 @@ const WorkflowStatus = ({ status }) => {
             </div>
         </div>
     )
+};
+
+const ErrorDisplay = ({ message }) => {
+    if (!message) return null;
+    return (
+        <div className="bg-red-500/10 border border-red-500/30 text-red-300 text-sm rounded-lg p-3 mt-4">
+            {message}
+        </div>
+    );
 };
 
 
@@ -127,6 +145,7 @@ const PrototypeView = ({ onNavigate }) => {
     const [accuracyResult, setAccuracyResult] = useState(null);
     const [figmaUrl, setFigmaUrl] = useState('');
     const [loadingText, setLoadingText] = useState('');
+    const [error, setError] = useState('');
 
 
     const handleFileUpload = useCallback(async (files) => {
@@ -164,16 +183,17 @@ const PrototypeView = ({ onNavigate }) => {
     const handleFigmaImport = async () => {
         if (!figmaUrl) return;
         setIsLoading(true);
+        setError('');
         setWorkflowStatus({ text: 'Importing from Figma...', architect: 'running' });
         try {
-            const response = await fetch('http://localhost:3001/api/import-figma', {
+            const response = await fetch('/api/import-figma', { // UPDATED
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ figmaUrl }),
             });
             if (!response.ok) {
                  const err = await response.json();
-                 throw new Error(`Figma API error: ${err.error}`);
+                 throw new Error(`Figma API error: ${err.error || response.statusText}`);
             }
             const images = await response.json();
             // Convert base64 to File objects
@@ -190,14 +210,16 @@ const PrototypeView = ({ onNavigate }) => {
             handleFileUpload(imageFiles);
         } catch (error) {
             console.error('Figma import failed:', error);
-            alert(`Figma import failed: ${error.message}`);
+            setError(`Figma import failed: ${error.message}`);
         } finally {
             setIsLoading(false);
+            setWorkflowStatus({});
         }
     };
 
     const handleGenerateCode = async () => {
         setIsLoading(true);
+        setError('');
         setGeneratedFiles({});
         setAccuracyResult(null);
 
@@ -211,7 +233,7 @@ const PrototypeView = ({ onNavigate }) => {
 
         try {
             setWorkflowStatus({ text: 'Architect: Analyzing project structure...', architect: 'running' });
-            const response = await fetch('http://localhost:3001/api/generate-code', {
+            const response = await fetch('/api/generate-code', { // UPDATED
                 method: 'POST',
                 body: formData,
             });
@@ -234,7 +256,7 @@ const PrototypeView = ({ onNavigate }) => {
 
         } catch (error) {
             console.error('Error generating code:', error);
-            setGeneratedFiles({ 'error.txt': error.message });
+            setError(error.message);
             setWorkflowStatus({ text: `Error: ${error.message}`, architect: 'completed', builder: 'completed', composer: 'completed', finisher: 'error' });
         } finally {
             setTimeout(() => setIsLoading(false), 2000);
@@ -258,7 +280,7 @@ const PrototypeView = ({ onNavigate }) => {
         setIsPreviewing(true);
 
         if (!window.WebContainer) {
-            alert("Error: WebContainer API is not available. Preview cannot be started.");
+            setError("Error: WebContainer API is not available. Preview cannot be started.");
             setIsPreviewing(false);
             return;
         }
@@ -288,7 +310,7 @@ const PrototypeView = ({ onNavigate }) => {
             setLoadingText('Starting dev server...');
         } catch (error) {
             console.error("Failed to boot WebContainer:", error);
-            alert("Failed to start the preview environment. See console for details.");
+            setError("Failed to start the preview environment. See console for details.");
             setIsPreviewing(false);
         }
     };
@@ -371,7 +393,7 @@ const PrototypeView = ({ onNavigate }) => {
                             ))}
                         </div>
                     </div>
-                    {isLoading ? <WorkflowStatus status={workflowStatus} /> : (
+                    {isLoading ? <WorkflowStatus status={workflowStatus} error={error} /> : (
                         <div className="bg-[#1f2937] rounded-xl p-6 border border-gray-700/50">
                             <h3 className="text-xl font-bold text-white mb-4">Actions</h3>
                             <div className="flex flex-col sm:flex-row gap-4">
@@ -380,6 +402,7 @@ const PrototypeView = ({ onNavigate }) => {
                                 <button onClick={handleDownload} disabled={Object.keys(generatedFiles).length === 0} className="flex-1 bg-gray-600 hover:bg-gray-700 disabled:bg-gray-500 disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-lg transition-colors">Download Codebase</button>
                                 <input type="text" value={projectName} onChange={(e) => setProjectName(e.target.value)} placeholder="Enter Project Name" className="bg-gray-700 border border-gray-600 rounded-md py-2 px-4 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500/50"/>
                             </div>
+                             <ErrorDisplay message={error} />
                         </div>
                     )}
                     {Object.keys(generatedFiles).length > 0 && !isLoading && (
@@ -463,6 +486,7 @@ const AppLabGenerateView = ({ onNavigate, initialPlatform }) => {
     const [imagePreview, setImagePreview] = useState(null);
     const [accuracyResult, setAccuracyResult] = useState(null);
     const [platform, setPlatform] = useState(initialPlatform);
+    const [error, setError] = useState('');
 
     const handleFileUpload = useCallback(async (files) => {
         const newFiles = [];
@@ -498,6 +522,7 @@ const AppLabGenerateView = ({ onNavigate, initialPlatform }) => {
 
     const handleGenerateCode = async () => {
         setIsLoading(true);
+        setError('');
         setGeneratedFiles({});
         setAccuracyResult(null);
 
@@ -509,7 +534,7 @@ const AppLabGenerateView = ({ onNavigate, initialPlatform }) => {
 
         try {
             setWorkflowStatus({ text: 'Architect: Analyzing project structure...', architect: 'running' });
-            const response = await fetch('http://localhost:3001/api/generate-native-code', {
+            const response = await fetch('/api/generate-native-code', { // UPDATED
                 method: 'POST',
                 body: formData,
             });
@@ -532,7 +557,7 @@ const AppLabGenerateView = ({ onNavigate, initialPlatform }) => {
 
         } catch (error) {
             console.error('Error generating native code:', error);
-            setGeneratedFiles({ 'error.txt': error.message });
+            setError(error.message);
             setWorkflowStatus({ text: `Error: ${error.message}`, architect: 'completed', builder: 'completed', composer: 'completed', finisher: 'error' });
         } finally {
             setTimeout(() => setIsLoading(false), 2000);
@@ -588,7 +613,7 @@ const AppLabGenerateView = ({ onNavigate, initialPlatform }) => {
                             ))}
                         </div>
                     </div>
-                    {isLoading ? <WorkflowStatus status={workflowStatus} /> : (
+                    {isLoading ? <WorkflowStatus status={workflowStatus} error={error}/> : (
                         <div className="bg-[#1f2937] rounded-xl p-6 border border-gray-700/50">
                             <h3 className="text-xl font-bold text-white mb-4">Actions</h3>
                             <div className="flex flex-col sm:flex-row gap-4">
@@ -596,6 +621,7 @@ const AppLabGenerateView = ({ onNavigate, initialPlatform }) => {
                                 <button onClick={handleDownload} disabled={Object.keys(generatedFiles).length === 0} className="flex-1 bg-gray-600 hover:bg-gray-700 disabled:bg-gray-500 disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-lg transition-colors">Download Codebase</button>
                                 <input type="text" value={projectName} onChange={(e) => setProjectName(e.target.value)} placeholder="Enter Project Name" className="bg-gray-700 border border-gray-600 rounded-md py-2 px-4 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500/50"/>
                             </div>
+                            <ErrorDisplay message={error} />
                         </div>
                     )}
                     {Object.keys(generatedFiles).length > 0 && !isLoading && (
@@ -637,6 +663,7 @@ const IntegrationLabView = ({ onNavigate }) => {
     const [projectName, setProjectName] = useState('ai-generated-app');
     const [accuracyResult, setAccuracyResult] = useState(null);
     const [refinedPlan, setRefinedPlan] = useState('');
+    const [error, setError] = useState('');
 
     const examples = [
         {
@@ -700,13 +727,14 @@ const IntegrationLabView = ({ onNavigate }) => {
 
     const handleAnalyzePlan = async () => {
         if (!prompt.trim()) {
-            alert("Please provide a description first.");
+            setError("Please provide a description first.");
             return;
         }
         setIsAnalyzing(true);
+        setError('');
         setRefinedPlan('');
         try {
-            const response = await fetch('http://localhost:3001/api/analyze-prompt', {
+            const response = await fetch('/api/analyze-prompt', { // UPDATED
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ prompt }),
@@ -716,7 +744,7 @@ const IntegrationLabView = ({ onNavigate }) => {
             setRefinedPlan(data.plan);
         } catch (error) {
             console.error('Error analyzing plan:', error);
-            alert(`Failed to analyze the plan: ${error.message}`);
+            setError(`Failed to analyze the plan: ${error.message}`);
         } finally {
             setIsAnalyzing(false);
         }
@@ -725,16 +753,17 @@ const IntegrationLabView = ({ onNavigate }) => {
     const handleGenerateCode = async () => {
         const finalPrompt = refinedPlan || prompt;
         if (!finalPrompt.trim()) {
-            alert("Please provide a description or generate a plan first.");
+            setError("Please provide a description or generate a plan first.");
             return;
         }
         setIsLoading(true);
+        setError('');
         setGeneratedFiles({});
         setAccuracyResult(null);
 
         try {
             setWorkflowStatus({ text: 'Architect: Analyzing requirements...', architect: 'running' });
-            const response = await fetch('http://localhost:3001/api/generate-from-text', {
+            const response = await fetch('/api/generate-from-text', { // UPDATED
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -762,7 +791,7 @@ const IntegrationLabView = ({ onNavigate }) => {
 
         } catch (error) {
             console.error('Error generating code from text:', error);
-            setGeneratedFiles({ 'error.txt': error.message });
+            setError(error.message);
             setWorkflowStatus({ text: `Error: ${error.message}`, architect: 'completed', builder: 'completed', composer: 'completed', finisher: 'error' });
         } finally {
             setTimeout(() => setIsLoading(false), 2000);
@@ -802,6 +831,7 @@ const IntegrationLabView = ({ onNavigate }) => {
                                 onClick={() => {
                                     setPrompt(example.prompt);
                                     setRefinedPlan(''); // Clear refined plan when a new example is selected
+                                    setError('');
                                 }}
                                 className="w-full text-left p-3 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm text-white transition-colors"
                             >
@@ -819,6 +849,7 @@ const IntegrationLabView = ({ onNavigate }) => {
                             onChange={(e) => {
                                 setPrompt(e.target.value);
                                 setRefinedPlan('');
+                                setError('');
                             }}
                             placeholder="Describe the application you want to build, or select an example to edit..."
                             className="w-full h-48 p-4 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500/50 transition-all"
@@ -844,9 +875,10 @@ const IntegrationLabView = ({ onNavigate }) => {
                                 className="w-full h-48 p-4 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all"
                             />
                         )}
+                        <ErrorDisplay message={error} />
                     </div>
 
-                    {isLoading ? <WorkflowStatus status={workflowStatus} /> : (
+                    {isLoading ? <WorkflowStatus status={workflowStatus} error={error} /> : (
                         <div className="w-full bg-[#1f2937] rounded-xl p-6 border border-gray-700/50">
                             <h3 className="text-xl font-bold text-white mb-4">3. Generate & Download</h3>
                             <div className="flex flex-col sm:flex-row gap-4">
@@ -858,6 +890,7 @@ const IntegrationLabView = ({ onNavigate }) => {
                                 </button>
                                 <input type="text" value={projectName} onChange={(e) => setProjectName(e.target.value)} placeholder="Enter Project Name" className="bg-gray-700 border border-gray-600 rounded-md py-2 px-4 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500/50"/>
                             </div>
+                            <ErrorDisplay message={error} />
                         </div>
                     )}
 
