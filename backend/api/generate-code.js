@@ -2,10 +2,29 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import formidable from 'formidable';
 import fs from 'fs/promises';
 
-// Initialize the Google AI client with the API key from environment variables
-const genAI = new GoogleGenerativeAI("AIzaSyBcR6rMwP9v8e2cN56gdnkWMhJtOWyP_uU");
+// Initialize Gemini
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "AIzaSyBcR6rMwP9v8e2cN56gdnkWMhJtOWyP_uU");
 
-// Helper function to convert a file to a GenerativePart
+// Retry handler to prevent model overload crashes
+async function retryWithBackoff(fn, retries = 3, delay = 1000) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      return await fn();
+    } catch (err) {
+      const message = err?.message || '';
+      const isOverload = message.includes("overloaded") || message.includes("quota") || message.includes("503");
+
+      if (isOverload && i < retries - 1) {
+        console.warn(`Gemini overload. Retrying in ${delay * (i + 1)}ms...`);
+        await new Promise((res) => setTimeout(res, delay * (i + 1)));
+      } else {
+        throw err;
+      }
+    }
+  }
+}
+
+// Convert uploaded file to Gemini-compatible input
 async function fileToGenerativePart(file) {
   const fileData = await fs.readFile(file.filepath);
   return {
@@ -16,53 +35,71 @@ async function fileToGenerativePart(file) {
   };
 }
 
-// Main handler for the serverless function
+// API route handler
 export default async function handler(req, res) {
-  // Only allow POST requests
   if (req.method !== 'POST') {
     res.setHeader('Allow', ['POST']);
     return res.status(405).end(`Method ${req.method} Not Allowed`);
   }
 
   try {
-    const form = formidable({});
+    const form = formidable({ maxFiles: 5 });
     const [fields, files] = await form.parse(req);
 
-    const uploadedScreens = files.screens || [];
-    if (uploadedScreens.length === 0) {
+    const uploadedScreens = Array.isArray(files.screens)
+      ? files.screens
+      : [files.screens].filter(Boolean);
+
+    if (!uploadedScreens.length) {
       return res.status(400).json({ error: "No screens were uploaded." });
     }
 
-    // Prepare the prompt for the AI model
+    // Quality hint to avoid multiple routers / missing exports / bad structure
     const prompt = `
-      You are an expert web developer specializing in React and Tailwind CSS.
-      Based on the following screen mockups, generate a complete React application.
-      Create reusable components and structure the code logically.
-      The user has provided ${uploadedScreens.length} screens in order.
-      Analyze them and generate the corresponding JSX and CSS code.
-    `;
+You are a senior React engineer. Based on the UI screens provided, generate a **single React application** using Tailwind CSS and JSX.
 
-    // Convert all uploaded files to the format the AI model expects
+⚠️ DO NOT create multiple app routers or entry points. Use a single 'App.jsx' or 'App.js'.
+✅ Every component must have valid exports, required props, and no undefined variables.
+✅ Reuse shared components (like Buttons, Cards) across screens.
+✅ Do not generate duplicate routes or files.
+✅ Ensure the structure is valid and runs in a standard Create React App or Vite setup.
+
+Return code grouped by filename, formatted as:
+
+\`\`\`
+// src/components/MyComponent.jsx
+<component code here>
+\`\`\`
+
+Begin:
+`;
+
     const imageParts = await Promise.all(uploadedScreens.map(fileToGenerativePart));
 
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-    const result = await model.generateContent([prompt, ...imageParts]);
-    const response = await result.response;
-    const text = response.text();
 
-    // In a real implementation, you would parse 'text' to extract file paths and code
-    // For this example, we'll return a mock file structure.
+    const result = await retryWithBackoff(() =>
+      model.generateContent([prompt, ...imageParts])
+    );
+
+    const text = (await result.response).text();
+
+    // 🧠 Optional: smarter parsing for multiple files from LLM
+    // For now, mock split
     const generatedFiles = {
       'src/components/Header.jsx': `// Generated Header Code\n${text.substring(0, 200)}`,
-      'src/pages/HomePage.jsx': `// Generated Home Page Code\n${text.substring(200)}`,
+      'src/pages/HomePage.jsx': `// Generated Home Page Code\n${text.substring(200, 1200)}`,
+      'src/App.jsx': `// Root App Component\n${text.substring(1200, 2200)}`,
       'package.json': '{ "name": "new-react-app", "dependencies": { "react": "latest" } }'
     };
 
-    // Send the generated file content back to the frontend
     res.status(200).json({ generatedFiles });
 
   } catch (error) {
-    console.error('Error in generate-code API:', error);
-    res.status(500).json({ error: `Failed to generate code: ${error.message}` });
+    console.error('💥 generate-code API error:', error);
+    res.status(500).json({
+      error: `Generation failed.`,
+      details: error?.message || 'Unknown error'
+    });
   }
 }
