@@ -128,7 +128,7 @@ const LandingView = ({ onNavigate }) => (
     </div>
 );
 
-const PrototypeView = ({ onNavigate }) => {
+const PrototypeView = ({ onNavigate, isJsZipLoaded }) => {
     const [uploadedFiles, setUploadedFiles] = useState([]);
     const [flowOrder, setFlowOrder] = useState([]);
     const [generatedFiles, setGeneratedFiles] = useState({});
@@ -149,6 +149,10 @@ const PrototypeView = ({ onNavigate }) => {
 
 
     const handleFileUpload = useCallback(async (files) => {
+        if (!isJsZipLoaded) {
+            setError("Zip library not loaded yet. Please wait.");
+            return;
+        }
         const newFiles = [];
         for (const file of files) {
             if (file.name.toLowerCase().endsWith('.zip')) {
@@ -167,7 +171,7 @@ const PrototypeView = ({ onNavigate }) => {
         const combinedFiles = [...uploadedFiles, ...newFiles];
         setUploadedFiles(combinedFiles);
         setFlowOrder(new Array(combinedFiles.length).fill(null));
-    }, [uploadedFiles]);
+    }, [uploadedFiles, isJsZipLoaded]);
 
     const handleDragStart = (e, file) => setDraggedItem(file);
     const handleDrop = (e, index) => {
@@ -186,7 +190,7 @@ const PrototypeView = ({ onNavigate }) => {
         setError('');
         setWorkflowStatus({ text: 'Importing from Figma...', architect: 'running' });
         try {
-            const response = await fetch('/api/import-figma', { // UPDATED
+            const response = await fetch('/api/import-figma', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ figmaUrl }),
@@ -233,7 +237,7 @@ const PrototypeView = ({ onNavigate }) => {
 
         try {
             setWorkflowStatus({ text: 'Architect: Analyzing project structure...', architect: 'running' });
-            const response = await fetch('/api/generate-code', { // UPDATED
+            const response = await fetch('/api/generate-code', {
                 method: 'POST',
                 body: formData,
             });
@@ -264,7 +268,11 @@ const PrototypeView = ({ onNavigate }) => {
     };
 
     const handleDownload = async () => {
-        const zip = window.JSZip();
+        if (!isJsZipLoaded) {
+            setError("Zip library not loaded yet. Please wait.");
+            return;
+        }
+        const zip = new window.JSZip();
         for (const path in generatedFiles) {
             zip.file(path, generatedFiles[path]);
         }
@@ -365,12 +373,12 @@ const PrototypeView = ({ onNavigate }) => {
                     <div className="flex flex-col gap-4 flex-grow min-h-0">
                         <h3 className="text-lg font-bold text-white">IMAGE TRAY</h3>
                         <div>
-                            <label htmlFor="file-upload" className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-600 border-dashed rounded-lg cursor-pointer bg-gray-700 hover:bg-gray-600">
+                            <label htmlFor="file-upload" className={`flex flex-col items-center justify-center w-full h-32 border-2 border-gray-600 border-dashed rounded-lg bg-gray-700 ${!isJsZipLoaded ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-gray-600'}`}>
                                 <div className="flex flex-col items-center justify-center pt-5 pb-6">
                                    <p className="mb-2 text-sm text-gray-400"><span className="font-semibold">Upload Screens</span></p>
                                    <p className="text-xs text-gray-500">PNG, JPG, or ZIP</p>
                                 </div>
-                                <input id="file-upload" type="file" className="hidden" multiple onChange={(e) => handleFileUpload(Array.from(e.target.files))} />
+                                <input id="file-upload" type="file" className="hidden" multiple onChange={(e) => handleFileUpload(Array.from(e.target.files))} disabled={!isJsZipLoaded} />
                             </label>
                         </div>
                         <div className="flex-grow overflow-y-auto p-2 bg-gray-900/50 rounded-lg flex flex-row lg:flex-col flex-wrap gap-3">
@@ -399,7 +407,7 @@ const PrototypeView = ({ onNavigate }) => {
                             <div className="flex flex-col sm:flex-row gap-4">
                                 <button onClick={handleGenerateCode} disabled={isLoading || flowOrder.some(f => f === null)} className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-500 disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-lg transition-colors">Generate Code</button>
                                 <button onClick={handlePreview} disabled={Object.keys(generatedFiles).length === 0} className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-500 disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-lg transition-colors">Preview</button>
-                                <button onClick={handleDownload} disabled={Object.keys(generatedFiles).length === 0} className="flex-1 bg-gray-600 hover:bg-gray-700 disabled:bg-gray-500 disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-lg transition-colors">Download Codebase</button>
+                                <button onClick={handleDownload} disabled={Object.keys(generatedFiles).length === 0 || !isJsZipLoaded} className="flex-1 bg-gray-600 hover:bg-gray-700 disabled:bg-gray-500 disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-lg transition-colors">Download Codebase</button>
                                 <input type="text" value={projectName} onChange={(e) => setProjectName(e.target.value)} placeholder="Enter Project Name" className="bg-gray-700 border border-gray-600 rounded-md py-2 px-4 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500/50"/>
                             </div>
                              <ErrorDisplay message={error} />
@@ -475,7 +483,7 @@ const AppLabLandingView = ({ onNavigate }) => (
 );
 
 
-const AppLabGenerateView = ({ onNavigate, initialPlatform }) => {
+const AppLabGenerateView = ({ onNavigate, initialPlatform, isJsZipLoaded }) => {
     const [uploadedFiles, setUploadedFiles] = useState([]);
     const [flowOrder, setFlowOrder] = useState([]);
     const [generatedFiles, setGeneratedFiles] = useState({});
@@ -489,6 +497,10 @@ const AppLabGenerateView = ({ onNavigate, initialPlatform }) => {
     const [error, setError] = useState('');
 
     const handleFileUpload = useCallback(async (files) => {
+        if (!isJsZipLoaded) {
+            setError("Zip library not loaded yet. Please wait.");
+            return;
+        }
         const newFiles = [];
         for (const file of files) {
             if (file.name.toLowerCase().endsWith('.zip')) {
@@ -507,7 +519,7 @@ const AppLabGenerateView = ({ onNavigate, initialPlatform }) => {
         const combinedFiles = [...uploadedFiles, ...newFiles];
         setUploadedFiles(combinedFiles);
         setFlowOrder(new Array(combinedFiles.length).fill(null));
-    }, [uploadedFiles]);
+    }, [uploadedFiles, isJsZipLoaded]);
 
     const handleDragStart = (e, file) => setDraggedItem(file);
     const handleDrop = (e, index) => {
@@ -534,7 +546,7 @@ const AppLabGenerateView = ({ onNavigate, initialPlatform }) => {
 
         try {
             setWorkflowStatus({ text: 'Architect: Analyzing project structure...', architect: 'running' });
-            const response = await fetch('/api/generate-native-code', { // UPDATED
+            const response = await fetch('/api/generate-native-code', {
                 method: 'POST',
                 body: formData,
             });
@@ -565,6 +577,10 @@ const AppLabGenerateView = ({ onNavigate, initialPlatform }) => {
     };
 
     const handleDownload = async () => {
+        if (!isJsZipLoaded) {
+            setError("Zip library not loaded yet. Please wait.");
+            return;
+        }
         const zip = new window.JSZip();
         for (const path in generatedFiles) {
             zip.file(path, generatedFiles[path]);
@@ -585,12 +601,12 @@ const AppLabGenerateView = ({ onNavigate, initialPlatform }) => {
                     <div className="flex flex-col gap-4 flex-grow min-h-0">
                         <h3 className="text-lg font-bold text-white">IMAGE TRAY</h3>
                         <div>
-                            <label htmlFor="file-upload" className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-600 border-dashed rounded-lg cursor-pointer bg-gray-700 hover:bg-gray-600">
+                            <label htmlFor="file-upload" className={`flex flex-col items-center justify-center w-full h-32 border-2 border-gray-600 border-dashed rounded-lg bg-gray-700 ${!isJsZipLoaded ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-gray-600'}`}>
                                 <div className="flex flex-col items-center justify-center pt-5 pb-6">
                                    <p className="mb-2 text-sm text-gray-400"><span className="font-semibold">Upload Screens</span></p>
                                    <p className="text-xs text-gray-500">PNG, JPG, or ZIP</p>
                                 </div>
-                                <input id="file-upload" type="file" className="hidden" multiple onChange={(e) => handleFileUpload(Array.from(e.target.files))} />
+                                <input id="file-upload" type="file" className="hidden" multiple onChange={(e) => handleFileUpload(Array.from(e.target.files))} disabled={!isJsZipLoaded} />
                             </label>
                         </div>
                         <div className="flex-grow overflow-y-auto p-2 bg-gray-900/50 rounded-lg flex flex-row lg:flex-col flex-wrap gap-3">
@@ -618,7 +634,7 @@ const AppLabGenerateView = ({ onNavigate, initialPlatform }) => {
                             <h3 className="text-xl font-bold text-white mb-4">Actions</h3>
                             <div className="flex flex-col sm:flex-row gap-4">
                                 <button onClick={handleGenerateCode} disabled={isLoading || flowOrder.some(f => f === null)} className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-500 disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-lg transition-colors">Generate Code</button>
-                                <button onClick={handleDownload} disabled={Object.keys(generatedFiles).length === 0} className="flex-1 bg-gray-600 hover:bg-gray-700 disabled:bg-gray-500 disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-lg transition-colors">Download Codebase</button>
+                                <button onClick={handleDownload} disabled={Object.keys(generatedFiles).length === 0 || !isJsZipLoaded} className="flex-1 bg-gray-600 hover:bg-gray-700 disabled:bg-gray-500 disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-lg transition-colors">Download Codebase</button>
                                 <input type="text" value={projectName} onChange={(e) => setProjectName(e.target.value)} placeholder="Enter Project Name" className="bg-gray-700 border border-gray-600 rounded-md py-2 px-4 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500/50"/>
                             </div>
                             <ErrorDisplay message={error} />
@@ -734,7 +750,7 @@ const IntegrationLabView = ({ onNavigate }) => {
         setError('');
         setRefinedPlan('');
         try {
-            const response = await fetch('/api/analyze-prompt', { // UPDATED
+            const response = await fetch('/api/analyze-prompt', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ prompt }),
@@ -763,7 +779,7 @@ const IntegrationLabView = ({ onNavigate }) => {
 
         try {
             setWorkflowStatus({ text: 'Architect: Analyzing requirements...', architect: 'running' });
-            const response = await fetch('/api/generate-from-text', { // UPDATED
+            const response = await fetch('/api/generate-from-text', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -799,6 +815,10 @@ const IntegrationLabView = ({ onNavigate }) => {
     };
 
     const handleDownload = async () => {
+        if (!window.JSZip) {
+            setError("Zip library not loaded yet. Please wait.");
+            return;
+        }
         const zip = new window.JSZip();
         for (const path in generatedFiles) {
             zip.file(path, generatedFiles[path]);
@@ -921,6 +941,24 @@ const IntegrationLabView = ({ onNavigate }) => {
 function App() {
     const [view, setView] = useState('initial');
     const [appLabPlatform, setAppLabPlatform] = useState('android');
+    const [isJsZipLoaded, setIsJsZipLoaded] = useState(false);
+
+    useEffect(() => {
+        if (window.JSZip) {
+            setIsJsZipLoaded(true);
+            return;
+        }
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+        script.async = true;
+        script.onload = () => setIsJsZipLoaded(true);
+        document.body.appendChild(script);
+
+        return () => {
+            // Clean up the script tag if the App component unmounts
+            document.body.removeChild(script);
+        };
+    }, []);
 
     const handleNavigate = (targetView, platform) => {
         if (platform) {
@@ -934,11 +972,11 @@ function App() {
             case 'landing':
                 return <LandingView onNavigate={handleNavigate} />;
             case 'prototype':
-                return <PrototypeView onNavigate={handleNavigate} />;
+                return <PrototypeView onNavigate={handleNavigate} isJsZipLoaded={isJsZipLoaded} />;
             case 'app-lab-landing':
                 return <AppLabLandingView onNavigate={handleNavigate} />;
             case 'app-lab-generate':
-                return <AppLabGenerateView onNavigate={handleNavigate} initialPlatform={appLabPlatform} />;
+                return <AppLabGenerateView onNavigate={handleNavigate} initialPlatform={appLabPlatform} isJsZipLoaded={isJsZipLoaded} />;
             case 'integration-lab':
                 return <IntegrationLabView onNavigate={handleNavigate} />;
             case 'initial':
