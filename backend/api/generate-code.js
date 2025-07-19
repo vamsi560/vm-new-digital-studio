@@ -90,7 +90,22 @@ Begin:
       'src/components/Header.jsx': `// Generated Header Code\n${text.substring(0, 200)}`,
       'src/pages/HomePage.jsx': `// Generated Home Page Code\n${text.substring(200, 1200)}`,
       'src/App.jsx': `// Root App Component\n${text.substring(1200, 2200)}`,
-      'package.json': '{ "name": "new-react-app", "dependencies": { "react": "latest" } }'
+      'package.json': JSON.stringify({
+        name: "vm-digital-studio-generated",
+        version: "1.0.0",
+        private: true,
+        scripts: {
+          start: "react-scripts start",
+          build: "react-scripts build",
+          test: "react-scripts test"
+        },
+        dependencies: {
+          react: "^18.2.0",
+          "react-dom": "^18.2.0",
+          "react-scripts": "5.0.1"
+        }
+      }, null, 2)
+
     };
 
     res.status(200).json({ generatedFiles });
