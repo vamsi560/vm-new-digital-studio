@@ -1,27 +1,29 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import formidable from 'formidable';
-import fs from 'fs/promises';
+import formidable from "formidable";
+import fs from "fs/promises";
 
-// Initialize AI
-const genAI = new GoogleGenerativeAI("AIzaSyBcR6rMwP9v8e2cN56gdnkWMhJtOWyP_uU");
+// Initialize Google Gemini AI
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "AIzaSyBcR6rMwP9v8e2cN56gdnkWMhJtOWyP_uU");
 
-async function fileToGenerativePart(file) {
-  const fileData = await fs.readFile(file.filepath);
-  return {
-    inlineData: {
-      data: Buffer.from(fileData).toString("base64"),
-      mimeType: file.mimetype,
-    },
-  };
+const TAILWIND_INDICATORS = [
+  'className="bg-',
+  'className="text-',
+  'className="flex',
+  'className="grid',
+];
+
+function containsTailwindClasses(fileMap) {
+  return Object.values(fileMap).some((content) =>
+    TAILWIND_INDICATORS.some((cls) => content.includes(cls))
+  );
 }
 
-// Utility to strip out markdown or invalid lines from AI response
 function cleanCodeBlocks(raw) {
   const code = raw
-    .replace(/```(?:jsx|js)?/g, '')     // remove markdown code fences
-    .replace(/^.*\*\*.*$/gm, '')        // remove markdown bold lines
-    .replace(/^Here's.*$/gm, '')        // remove English intros
-    .replace(/^[A-Z].*:$/gm, '')        // remove lines like "Project Structure:"
+    .replace(/```(?:jsx|js)?/g, '')
+    .replace(/^.*\*\*.*$/gm, '')
+    .replace(/^Here's.*$/gm, '')
+    .replace(/^[A-Z].*:$/gm, '')
     .trim();
   return code;
 }
@@ -38,7 +40,7 @@ export default async function handler(req, res) {
 
     const uploadedScreens = files.screens || [];
     if (uploadedScreens.length === 0) {
-      return res.status(400).json({ error: "No screens were uploaded." });
+      return res.status(400).json({ error: 'No screens were uploaded.' });
     }
 
     const prompt = `
@@ -48,15 +50,48 @@ export default async function handler(req, res) {
       Include proper exports, props handling, and avoid multiple <Routes> in a single file.
     `;
 
-    const imageParts = await Promise.all(uploadedScreens.map(fileToGenerativePart));
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-    const result = await model.generateContent([prompt, ...imageParts]);
-    const rawText = await result.response.text();
+    async function fileToGenerativePart(file) {
+      const fileData = await fs.readFile(file.filepath);
+      return {
+        inlineData: {
+          data: Buffer.from(fileData).toString('base64'),
+          mimeType: file.mimetype,
+        },
+      };
+    }
+
+    const imageParts = await Promise.all(
+      uploadedScreens.map(fileToGenerativePart)
+    );
+
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    let rawText = '';
+    let retry = 0;
+    const maxRetries = 3;
+
+    while (retry < maxRetries) {
+      try {
+        const result = await model.generateContent([prompt, ...imageParts]);
+        rawText = await result.response.text();
+        break;
+      } catch (error) {
+        if (error.response?.status === 429) {
+          await new Promise((resolve) => setTimeout(resolve, (retry + 1) * 1000));
+          retry++;
+        } else {
+          throw error;
+        }
+      }
+    }
+
+    if (!rawText) {
+      return res.status(500).json({ error: 'AI generation failed after retries.' });
+    }
 
     const cleanText = cleanCodeBlocks(rawText);
 
-    const generatedFiles = {
-      'src/components/Header.jsx': cleanText.substring(0, 400), // replace with parsed parts
+    const jsxFiles = {
+      'src/components/Header.jsx': cleanText.substring(0, 400),
       'src/pages/HomePage.jsx': cleanText.substring(400, 1200),
       'src/index.js': `
 import React from 'react';
@@ -74,22 +109,61 @@ root.render(<React.StrictMode><App /></React.StrictMode>);
 </html>
       `,
       'package.json': JSON.stringify({
-        name: "generated-react-app",
-        version: "1.0.0",
+        name: 'generated-react-app',
+        version: '1.0.0',
         private: true,
         dependencies: {
-          react: "^18.2.0",
-          "react-dom": "^18.2.0"
+          react: '^18.2.0',
+          'react-dom': '^18.2.0',
         },
         scripts: {
-          start: "react-scripts start",
-          build: "react-scripts build"
-        }
-      }, null, 2)
+          start: 'react-scripts start',
+          build: 'react-scripts build',
+        },
+      }, null, 2),
     };
 
-    res.status(200).json({ generatedFiles });
+    const usesTailwind = containsTailwindClasses(jsxFiles);
+    if (usesTailwind) {
+      jsxFiles['tailwind.config.js'] = `
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+  content: ['./src/**/*.{js,jsx}'],
+  theme: {
+    extend: {},
+  },
+  plugins: [],
+};`;
 
+      jsxFiles['postcss.config.js'] = `
+module.exports = {
+  plugins: {
+    tailwindcss: {},
+    autoprefixer: {},
+  },
+};`;
+
+      jsxFiles['src/index.css'] = `
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+`;
+
+      jsxFiles['src/index.js'] = jsxFiles['src/index.js'].replace(
+        `import App from './App';`,
+        `import './index.css';\nimport App from './App';`
+      );
+
+      const pkg = JSON.parse(jsxFiles['package.json']);
+      pkg.devDependencies = {
+        tailwindcss: '^3.4.1',
+        autoprefixer: '^10.4.14',
+        postcss: '^8.4.24',
+      };
+      jsxFiles['package.json'] = JSON.stringify(pkg, null, 2);
+    }
+
+    res.status(200).json({ generatedFiles: jsxFiles });
   } catch (error) {
     console.error('Error in generate-code API:', error);
     res.status(500).json({ error: `Failed to generate code: ${error.message}` });
