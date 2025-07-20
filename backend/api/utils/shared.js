@@ -1,7 +1,7 @@
 // 📁 File: api/utils/shared.js
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
-const dotenv = require('dotenv');
+import dotenv from 'dotenv';
 dotenv.config();
 
 const apiKeys = [
@@ -16,7 +16,7 @@ const clients = apiKeys.map(key => new GoogleGenerativeAI(key));
 let currentClientIndex = 0;
 let currentModelIndex = 0;
 
-function getApiClient() {
+export function getApiClient() {
   const client = clients[currentClientIndex];
   const modelName = models[currentModelIndex];
 
@@ -27,7 +27,7 @@ function getApiClient() {
   return client.getGenerativeModel({ model: modelName });
 }
 
-function bufferToGenerativePart(buffer, mimeType) {
+export function bufferToGenerativePart(buffer, mimeType) {
   return {
     inlineData: {
       data: buffer.toString('base64'),
@@ -36,7 +36,7 @@ function bufferToGenerativePart(buffer, mimeType) {
   };
 }
 
-function toPascalCase(str) {
+export function toPascalCase(str) {
   if (typeof str !== 'string') return `Component${Math.floor(Math.random() * 1000)}`;
   return str
     .replace(/[^a-zA-Z0-9]+/g, ' ')
@@ -45,7 +45,7 @@ function toPascalCase(str) {
     .join('');
 }
 
-async function callGenerativeAI(prompt, images = [], isJsonResponse = false, attempt = 1) {
+export async function callGenerativeAI(prompt, images = [], isJsonResponse = false, attempt = 1) {
   const maxAttempts = clients.length * models.length;
   if (attempt > maxAttempts) throw new Error("All API keys/models failed");
 
@@ -77,7 +77,7 @@ async function callGenerativeAI(prompt, images = [], isJsonResponse = false, att
   }
 }
 
-async function parseJsonWithCorrection(jsonString, prompt, images = []) {
+export async function parseJsonWithCorrection(jsonString, prompt, images = []) {
   for (let i = 0; i < 3; i++) {
     try {
       const cleaned = jsonString.replace(/```[a-z]*|```/g, '').trim();
@@ -90,25 +90,12 @@ async function parseJsonWithCorrection(jsonString, prompt, images = []) {
   throw new Error("Failed to parse corrected JSON");
 }
 
-function buildAppRouterPrompt(pages) {
+export function buildAppRouterPrompt(pages) {
   if (!pages || pages.length === 0) return '';
 
   if (pages.length === 1) {
-    return `You are an expert React developer. Generate App.js for a single-page app.
-Import and render '${pages[0]}' from './pages/${pages[0]}'.
-Set up BrowserRouter and Route for '/' only. Do not include navigation or links.`;
+    return `You are an expert React developer. Generate App.js for a single-page app.\nImport and render '${pages[0]}' from './pages/${pages[0]}'.\nSet up BrowserRouter and Route for '/' only. Do not include navigation or links.`;
   }
 
-  return `You are an expert React developer. Generate App.js for a multi-page React app.
-Import and route the following pages using react-router-dom:
-${pages.map(p => `- import ${p} from './pages/${p}';`).join('\n')}
-Create a simple Nav with NavLinks. First page is home ('/'). Use clean Tailwind CSS.`;
+  return `You are an expert React developer. Generate App.js for a multi-page React app.\nImport and route the following pages using react-router-dom:\n${pages.map(p => `- import ${p} from './pages/${p}';`).join('\n')}\nCreate a simple Nav with NavLinks. First page is home ('/'). Use clean Tailwind CSS.`;
 }
-
-module.exports = {
-  bufferToGenerativePart,
-  toPascalCase,
-  callGenerativeAI,
-  parseJsonWithCorrection,
-  buildAppRouterPrompt
-};
