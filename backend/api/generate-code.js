@@ -2,30 +2,142 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import formidable from "formidable";
 import fs from "fs/promises";
 
-// Initialize Google Gemini AI
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "AIzaSyBcR6rMwP9v8e2cN56gdnkWMhJtOWyP_uU");
 
-const TAILWIND_INDICATORS = [
-  'className="bg-',
-  'className="text-',
-  'className="flex',
-  'className="grid',
-];
-
-function containsTailwindClasses(fileMap) {
-  return Object.values(fileMap).some((content) =>
-    TAILWIND_INDICATORS.some((cls) => content.includes(cls))
-  );
-}
-
 function cleanCodeBlocks(raw) {
-  const code = raw
+  return raw
     .replace(/```(?:jsx|js)?/g, '')
     .replace(/^.*\*\*.*$/gm, '')
     .replace(/^Here's.*$/gm, '')
-    .replace(/^[A-Z].*:$/gm, '')
+    .replace(/^[A-Z].*:\s*$/gm, '')
     .trim();
-  return code;
+}
+
+function parseFilesFromResponse(text) {
+  const fileMap = {};
+  const blocks = text.split(/\/\/\s*File:\s*/).filter(Boolean);
+  for (const block of blocks) {
+    const lines = block.trim().split('\n');
+    const filename = lines.shift().trim();
+    fileMap[filename] = lines.join('\n').trim();
+  }
+  return fileMap;
+}
+
+function containsTailwindClasses(fileMap) {
+  const indicators = ['className="bg-', 'className="text-', 'className="flex', 'className="grid'];
+  return Object.values(fileMap).some((content) =>
+    indicators.some((cls) => content.includes(cls))
+  );
+}
+
+function ensureAppAndIndex(fileMap, pageFiles) {
+  if (!fileMap['src/App.jsx']) {
+    const imports = pageFiles.map((f, i) => `import Page${i + 1} from './pages/${f.split('/').pop()}';`).join('\n');
+    const renders = pageFiles.length === 1
+      ? `<Page1 />`
+      : `<div>\n${pageFiles.map((_, i) => `  <Page${i + 1} />`).join('\n')}\n</div>`;
+
+    fileMap['src/App.jsx'] = `
+import React from 'react';
+${imports}
+
+const App = () => {
+  return (
+    ${renders}
+  );
+};
+
+export default App;`;
+  }
+
+  if (!fileMap['src/index.js']) {
+    fileMap['src/index.js'] = `
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import App from './App';
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<React.StrictMode><App /></React.StrictMode>);
+    `;
+  }
+
+  if (!fileMap['public/index.html']) {
+    fileMap['public/index.html'] = `
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Generated App</title>
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>`;
+  }
+}
+
+function inferDependencies(fileMap) {
+  const dependencySet = new Set();
+  const importRegex = /import\s+.*?['"](.+?)['"]/g;
+
+  for (const content of Object.values(fileMap)) {
+    let match;
+    while ((match = importRegex.exec(content))) {
+      const module = match[1];
+      if (!module.startsWith('.') && !module.startsWith('/')) {
+        dependencySet.add(module.split('/')[0]);
+      }
+    }
+  }
+
+  const knownVersions = {
+    react: "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.23.0",
+    tailwindcss: "^3.4.1",
+    autoprefixer: "^10.4.14",
+    postcss: "^8.4.24"
+  };
+
+  const dependencies = {};
+  for (const dep of dependencySet) {
+    dependencies[dep] = knownVersions[dep] || "latest";
+  }
+
+  return dependencies;
+}
+
+function createPackageJson(fileMap) {
+  const deps = inferDependencies(fileMap);
+
+  const pkg = {
+    name: "generated-react-app",
+    version: "1.0.0",
+    private: true,
+    dependencies: deps,
+    scripts: {
+      start: "react-scripts start",
+      build: "react-scripts build",
+      lint: "eslint .",
+      format: "prettier --write ."
+    },
+    devDependencies: {
+      eslint: "^8.56.0",
+      prettier: "^3.2.5"
+    }
+  };
+
+  if ('tailwindcss' in deps) {
+    Object.assign(pkg.devDependencies, {
+      tailwindcss: deps.tailwindcss,
+      autoprefixer: deps.autoprefixer,
+      postcss: deps.postcss
+    });
+  }
+
+  return JSON.stringify(pkg, null, 2);
 }
 
 export default async function handler(req, res) {
@@ -45,9 +157,10 @@ export default async function handler(req, res) {
 
     const prompt = `
       You are an expert React developer.
-      Based on the screen mockups provided, generate valid and clean React component files.
-      Only return valid JSX code — no markdown, no English commentary, and no explanations.
-      Include proper exports, props handling, and avoid multiple <Routes> in a single file.
+      Based on the screen mockups provided, generate valid React JSX component files.
+      Return the result using // File: <filename> before each file.
+      Do NOT include markdown. Only return real JSX + JS files.
+      Ensure all components are exported, props handled, and multiple pages are split properly.
     `;
 
     async function fileToGenerativePart(file) {
@@ -89,43 +202,15 @@ export default async function handler(req, res) {
     }
 
     const cleanText = cleanCodeBlocks(rawText);
+    const fileMap = parseFilesFromResponse(cleanText);
 
-    const jsxFiles = {
-      'src/components/Header.jsx': cleanText.substring(0, 400),
-      'src/pages/HomePage.jsx': cleanText.substring(400, 1200),
-      'src/index.js': `
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import App from './App';
+    const usesTailwind = containsTailwindClasses(fileMap);
+    const pageFiles = Object.keys(fileMap).filter((k) => k.includes('/pages/') || k.includes('/components/'));
 
-const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(<React.StrictMode><App /></React.StrictMode>);
-      `,
-      'public/index.html': `
-<!DOCTYPE html>
-<html lang="en">
-  <head><meta charset="UTF-8"><title>Generated App</title></head>
-  <body><div id="root"></div></body>
-</html>
-      `,
-      'package.json': JSON.stringify({
-        name: 'generated-react-app',
-        version: '1.0.0',
-        private: true,
-        dependencies: {
-          react: '^18.2.0',
-          'react-dom': '^18.2.0',
-        },
-        scripts: {
-          start: 'react-scripts start',
-          build: 'react-scripts build',
-        },
-      }, null, 2),
-    };
+    ensureAppAndIndex(fileMap, pageFiles);
 
-    const usesTailwind = containsTailwindClasses(jsxFiles);
     if (usesTailwind) {
-      jsxFiles['tailwind.config.js'] = `
+      fileMap['tailwind.config.js'] = `
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: ['./src/**/*.{js,jsx}'],
@@ -135,7 +220,7 @@ module.exports = {
   plugins: [],
 };`;
 
-      jsxFiles['postcss.config.js'] = `
+      fileMap['postcss.config.js'] = `
 module.exports = {
   plugins: {
     tailwindcss: {},
@@ -143,27 +228,43 @@ module.exports = {
   },
 };`;
 
-      jsxFiles['src/index.css'] = `
+      fileMap['src/index.css'] = `
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 `;
 
-      jsxFiles['src/index.js'] = jsxFiles['src/index.js'].replace(
+      fileMap['src/index.js'] = fileMap['src/index.js'].replace(
         `import App from './App';`,
         `import './index.css';\nimport App from './App';`
       );
-
-      const pkg = JSON.parse(jsxFiles['package.json']);
-      pkg.devDependencies = {
-        tailwindcss: '^3.4.1',
-        autoprefixer: '^10.4.14',
-        postcss: '^8.4.24',
-      };
-      jsxFiles['package.json'] = JSON.stringify(pkg, null, 2);
     }
 
-    res.status(200).json({ generatedFiles: jsxFiles });
+    fileMap['.eslintrc.json'] = JSON.stringify({
+      env: {
+        browser: true,
+        es2021: true
+      },
+      extends: ['eslint:recommended', 'plugin:react/recommended'],
+      parserOptions: {
+        ecmaVersion: "latest",
+        sourceType: "module"
+      },
+      plugins: ['react'],
+      rules: {}
+    }, null, 2);
+
+    fileMap['.prettierrc'] = JSON.stringify({
+      semi: true,
+      singleQuote: true,
+      printWidth: 80,
+      tabWidth: 2,
+      trailingComma: 'none'
+    }, null, 2);
+
+    fileMap['package.json'] = createPackageJson(fileMap);
+
+    res.status(200).json({ generatedFiles: fileMap });
   } catch (error) {
     console.error('Error in generate-code API:', error);
     res.status(500).json({ error: `Failed to generate code: ${error.message}` });
