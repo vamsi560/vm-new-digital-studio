@@ -515,13 +515,13 @@ const PrototypeView = ({ onNavigate }) => {
                     <div>
                         <h3 className="text-lg font-bold text-white mb-4">STYLESHEET</h3>
                         <div className="space-y-3">
-                            <label htmlFor="stylesheet-upload" className="flex items-center justify-center w-full p-3 border-2 border-gray-600 border-dashed rounded-lg cursor-pointer bg-gray-700 hover:bg-gray-600">
+                            <label htmlFor="stylesheet-upload" className="flex flex-col items-center justify-center w-full p-3 border-2 border-gray-600 border-dashed rounded-lg cursor-pointer bg-gray-700 hover:bg-gray-600 gap-2 text-center">
                                 <svg className="w-8 h-8 mr-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
                                 <span id="stylesheet-upload-text" className="text-sm text-gray-400">Upload .css file</span>
                                 <input id="stylesheet-upload" type="file" className="hidden" accept=".css" onChange={(e) => setStylesheetContent(e.target.files[0])} />
                             </label>
                             <div className="relative">
-                                <button onClick={() => setIsTooltipVisible(!isTooltipVisible)} className="w-full p-3 flex items-center justify-center border-2 border-gray-600 border-dashed rounded-lg bg-gray-700 hover:bg-gray-600">
+                                <button onClick={() => setIsTooltipVisible(!isTooltipVisible)} className="w-full flex flex-col items-center justify-center p-3 border-2 border-gray-600 border-dashed rounded-lg bg-gray-700 hover:bg-gray-600 gap-2 text-center">
                                     <svg className="w-8 h-8 mr-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                                     <span className="text-sm text-gray-400">Add Manual Styles</span>
                                 </button>
@@ -545,7 +545,7 @@ const PrototypeView = ({ onNavigate }) => {
                     <div className="flex flex-col gap-4 flex-grow min-h-0">
                         <h3 className="text-lg font-bold text-white">IMAGE TRAY</h3>
                         <div>
-                            <label htmlFor="file-upload" className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-600 border-dashed rounded-lg cursor-pointer bg-gray-700 hover:bg-gray-600">
+                            <label htmlFor="file-upload" className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-600 border-dashed rounded-lg cursor-pointer bg-gray-700 hover:bg-gray-600 gap-2 text-center">
                                 <div className="flex flex-col items-center justify-center pt-5 pb-6">
                                    <p className="mb-2 text-sm text-gray-400"><span className="font-semibold">Upload Screens</span></p>
                                    <p className="text-xs text-gray-500">PNG, JPG, or ZIP</p>
@@ -1192,13 +1192,13 @@ const AppLabGenerateView = ({ onNavigate, initialPlatform }) => {
                     <div>
                         <h3 className="text-lg font-bold text-white mb-4">STYLESHEET</h3>
                         <div className="space-y-3">
-                            <label htmlFor="stylesheet-upload" className="flex items-center justify-center w-full p-3 border-2 border-gray-600 border-dashed rounded-lg cursor-pointer bg-gray-700 hover:bg-gray-600">
+                            <label htmlFor="stylesheet-upload" className="flex flex-col items-center justify-center w-full p-3 border-2 border-gray-600 border-dashed rounded-lg cursor-pointer bg-gray-700 hover:bg-gray-600 gap-2 text-center">
                                 <svg className="w-8 h-8 mr-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
                                 <span id="stylesheet-upload-text" className="text-sm text-gray-400">Upload .css file</span>
                                 <input id="stylesheet-upload" type="file" className="hidden" accept=".css" onChange={(e) => setStylesheetContent(e.target.files[0])} />
                             </label>
                             <div className="relative">
-                                <button onClick={() => setIsTooltipVisible(!isTooltipVisible)} className="w-full p-3 flex items-center justify-center border-2 border-gray-600 border-dashed rounded-lg bg-gray-700 hover:bg-gray-600">
+                                <button onClick={() => setIsTooltipVisible(!isTooltipVisible)} className="w-full flex flex-col items-center justify-center p-3 border-2 border-gray-600 border-dashed rounded-lg bg-gray-700 hover:bg-gray-600 gap-2 text-center">
                                     <svg className="w-8 h-8 mr-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                                     <span className="text-sm text-gray-400">Add Manual Styles</span>
                                 </button>
@@ -1222,7 +1222,7 @@ const AppLabGenerateView = ({ onNavigate, initialPlatform }) => {
                     <div className="flex flex-col gap-4 flex-grow min-h-0">
                         <h3 className="text-lg font-bold text-white">IMAGE TRAY</h3>
                         <div>
-                            <label htmlFor="file-upload" className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-600 border-dashed rounded-lg cursor-pointer bg-gray-700 hover:bg-gray-600">
+                            <label htmlFor="file-upload" className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-600 border-dashed rounded-lg cursor-pointer bg-gray-700 hover:bg-gray-600 gap-2 text-center">
                                 <div className="flex flex-col items-center justify-center pt-5 pb-6">
                                    <p className="mb-2 text-sm text-gray-400"><span className="font-semibold">Upload Screens</span></p>
                                    <p className="text-xs text-gray-500">PNG, JPG, or ZIP</p>
