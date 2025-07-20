@@ -3,7 +3,7 @@ import formidable from 'formidable';
 import fs from 'fs/promises';
 
 // Initialize AI
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
+const genAI = new GoogleGenerativeAI("AIzaSyBcR6rMwP9v8e2cN56gdnkWMhJtOWyP_uU");
 
 async function fileToGenerativePart(file) {
   const fileData = await fs.readFile(file.filepath);
