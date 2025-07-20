@@ -3,28 +3,9 @@ import formidable from 'formidable';
 import fs from 'fs/promises';
 
 // Initialize Gemini
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "AIzaSyBcR6rMwP9v8e2cN56gdnkWMhJtOWyP_uU");
+const genAI = new GoogleGenerativeAI("AIzaSyBcR6rMwP9v8e2cN56gdnkWMhJtOWyP_uU");
 
-// Retry handler to prevent model overload crashes
-async function retryWithBackoff(fn, retries = 3, delay = 1000) {
-  for (let i = 0; i < retries; i++) {
-    try {
-      return await fn();
-    } catch (err) {
-      const message = err?.message || '';
-      const isOverload = message.includes("overloaded") || message.includes("quota") || message.includes("503");
-
-      if (isOverload && i < retries - 1) {
-        console.warn(`Gemini overload. Retrying in ${delay * (i + 1)}ms...`);
-        await new Promise((res) => setTimeout(res, delay * (i + 1)));
-      } else {
-        throw err;
-      }
-    }
-  }
-}
-
-// Convert uploaded file to Gemini-compatible input
+// Convert file to Gemini-compatible part
 async function fileToGenerativePart(file) {
   const fileData = await fs.readFile(file.filepath);
   return {
@@ -35,7 +16,12 @@ async function fileToGenerativePart(file) {
   };
 }
 
-// API route handler
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', ['POST']);
@@ -43,53 +29,36 @@ export default async function handler(req, res) {
   }
 
   try {
-    const form = formidable({ maxFiles: 5 });
+    const form = formidable({});
     const [fields, files] = await form.parse(req);
-
-    const uploadedScreens = Array.isArray(files.screens)
-      ? files.screens
-      : [files.screens].filter(Boolean);
+    const uploadedScreens = Array.isArray(files.screens) ? files.screens : [files.screens];
 
     if (!uploadedScreens.length) {
       return res.status(400).json({ error: "No screens were uploaded." });
     }
 
-    // Quality hint to avoid multiple routers / missing exports / bad structure
+    // Prompt setup
     const prompt = `
-You are a senior React engineer. Based on the UI screens provided, generate a **single React application** using Tailwind CSS and JSX.
-
-⚠️ DO NOT create multiple app routers or entry points. Use a single 'App.jsx' or 'App.js'.
-✅ Every component must have valid exports, required props, and no undefined variables.
-✅ Reuse shared components (like Buttons, Cards) across screens.
-✅ Do not generate duplicate routes or files.
-✅ Ensure the structure is valid and runs in a standard Create React App or Vite setup.
-
-Return code grouped by filename, formatted as:
-
-\`\`\`
-// src/components/MyComponent.jsx
-<component code here>
-\`\`\`
-
-Begin:
-`;
+      You are a senior React developer. Based on the uploaded UI screens, generate a complete working Create React App (CRA) structure.
+      1. Use functional components and JSX.
+      2. Create at least two reusable components if possible.
+      3. Export all components correctly.
+      4. Avoid multiple routes or nested routers unless specified.
+      5. Generate a valid package.json with react-scripts.
+    `;
 
     const imageParts = await Promise.all(uploadedScreens.map(fileToGenerativePart));
 
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const result = await model.generateContent([prompt, ...imageParts]);
+    const response = await result.response;
+    const text = response.text();
 
-    const result = await retryWithBackoff(() =>
-      model.generateContent([prompt, ...imageParts])
-    );
+    // Example file content split (mock demo, adapt with parsing if needed)
+    const headerCode = text.substring(0, 500);
+    const homePageCode = text.substring(500, 1500);
 
-    const text = (await result.response).text();
-
-    // 🧠 Optional: smarter parsing for multiple files from LLM
-    // For now, mock split
     const generatedFiles = {
-      'src/components/Header.jsx': `// Generated Header Code\n${text.substring(0, 200)}`,
-      'src/pages/HomePage.jsx': `// Generated Home Page Code\n${text.substring(200, 1200)}`,
-      'src/App.jsx': `// Root App Component\n${text.substring(1200, 2200)}`,
       'package.json': JSON.stringify({
         name: "vm-digital-studio-generated",
         version: "1.0.0",
@@ -104,17 +73,59 @@ Begin:
           "react-dom": "^18.2.0",
           "react-scripts": "5.0.1"
         }
-      }, null, 2)
+      }, null, 2),
 
+      'public/index.html': `
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Generated React App</title>
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
+`,
+
+      'src/index.js': `
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import App from './App';
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);
+`,
+
+      'src/App.js': `
+import React from 'react';
+import Header from './components/Header';
+import HomePage from './pages/HomePage';
+
+function App() {
+  return (
+    <div>
+      <Header />
+      <HomePage />
+    </div>
+  );
+}
+
+export default App;
+`,
+
+      'src/components/Header.jsx': `// Header Component (AI-generated)
+${headerCode}`,
+
+      'src/pages/HomePage.jsx': `// Home Page Component (AI-generated)
+${homePageCode}`
     };
 
     res.status(200).json({ generatedFiles });
 
   } catch (error) {
-    console.error('💥 generate-code API error:', error);
-    res.status(500).json({
-      error: `Generation failed.`,
-      details: error?.message || 'Unknown error'
-    });
+    console.error('Error in generate-code API:', error);
+    res.status(500).json({ error: `Failed to generate code: ${error.message}` });
   }
 }
