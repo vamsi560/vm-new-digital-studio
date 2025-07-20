@@ -141,6 +141,11 @@ const AppLabView = ({ onNavigate }) => {
     return (
         <div className="content-wrapper min-h-screen flex flex-col p-8 bg-[#0D0F18]">
             <button onClick={() => onNavigate('landing')} className="absolute top-5 left-5 z-50 bg-gray-800/80 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg">&larr; Back</button>
+            {/* --- HEADER LOGO --- */}
+            <div className="flex items-center gap-3 mb-8">
+                <div className="border border-gray-600 p-2 rounded-lg bg-black"><span className="font-bold text-3xl text-white">VM</span></div>
+                <span className="text-3xl font-bold text-white">Digital Studio</span>
+            </div>
             <div className="flex-grow flex flex-col lg:flex-row gap-6 w-full max-w-[90rem] mx-auto mt-12">
                 <aside className="w-full lg:w-80 flex-shrink-0 rounded-xl p-4 flex flex-col gap-4 bg-[#1f2937] border border-gray-700/50">
                     <div className="flex flex-col gap-4 flex-grow min-h-0">
