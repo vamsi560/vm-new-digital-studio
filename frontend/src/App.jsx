@@ -500,66 +500,10 @@ const PrototypeView = ({ onNavigate }) => {
             <button onClick={() => setShowHistory(true)} className="absolute top-5 right-5 z-50 bg-gray-800/80 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg">History</button>
             <div className="flex-grow flex flex-col lg:flex-row gap-6 w-full max-w-6xl mx-auto mt-12">
                 <aside className="w-full lg:w-80 flex-shrink-0 rounded-xl p-4 flex flex-col gap-4 bg-[#1f2937] border border-gray-700/50">
-                    <div>
-                        <h3 className="text-lg font-bold text-white mb-4">IMPORT</h3>
-                         <div className="space-y-3">
-                            <div className="relative">
-                                <input type="text" value={figmaUrl} onChange={(e) => setFigmaUrl(e.target.value)} placeholder="Paste Figma URL..." className="w-full p-3 pr-12 bg-gray-700 border border-gray-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500/50"/>
-                                <button onClick={handleFigmaImport} className="absolute inset-y-0 right-0 px-3 flex items-center bg-green-600 hover:bg-green-700 rounded-r-lg">
-                                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 5l7 7-7 7M5 12h14"></path></svg>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    <hr className="border-gray-600" />
-                    <div>
-                        <h3 className="text-lg font-bold text-white mb-4">STYLESHEET</h3>
-                        <div className="space-y-3">
-                            <label htmlFor="stylesheet-upload" className="flex flex-col items-center justify-center w-full p-3 border-2 border-gray-600 border-dashed rounded-lg cursor-pointer bg-gray-700 hover:bg-gray-600 gap-2 text-center">
-                                <svg className="w-8 h-8 mr-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
-                                <span id="stylesheet-upload-text" className="text-sm text-gray-400">Upload .css file</span>
-                                <input id="stylesheet-upload" type="file" className="hidden" accept=".css" onChange={(e) => setStylesheetContent(e.target.files[0])} />
-                            </label>
-                            <div className="relative">
-                                <button onClick={() => setIsTooltipVisible(!isTooltipVisible)} className="w-full flex flex-col items-center justify-center p-3 border-2 border-gray-600 border-dashed rounded-lg bg-gray-700 hover:bg-gray-600 gap-2 text-center">
-                                    <svg className="w-8 h-8 mr-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
-                                    <span className="text-sm text-gray-400">Add Manual Styles</span>
-                                </button>
-                                {isTooltipVisible && (
-                                    <div className="absolute z-10 w-64 p-4 mt-2 space-y-3 text-sm text-white bg-gray-800 rounded-lg shadow-lg">
-                                        <h3 className="font-bold">Style Tokens</h3>
-                                        <div><label className="block mb-1 text-xs font-medium">Primary Color</label><input type="color" id="primary-color" defaultValue="#4A90E2" className="w-full h-8 p-1 bg-gray-700 border border-gray-600 rounded-md cursor-pointer"/></div>
-                                        <div><label className="block mb-1 text-xs font-medium">Font Family</label><input type="text" id="font-family" placeholder="e.g., 'Inter', sans-serif" className="w-full p-2 bg-gray-700 border border-gray-600 rounded-md"/></div>
-                                        <div><label className="block mb-1 text-xs font-medium">Border Radius (px)</label><input type="number" id="border-radius" placeholder="e.g., 8" className="w-full p-2 bg-gray-700 border border-gray-600 rounded-md"/></div>
-                                        <button onClick={() => { setDesignTokens({
-                                            '--primary-color': document.getElementById('primary-color').value,
-                                            '--font-family': `'${document.getElementById('font-family').value}'`,
-                                            '--border-radius': `${document.getElementById('border-radius').value}px`
-                                        }); setIsTooltipVisible(false); }} className="w-full px-4 py-2 font-bold text-white bg-green-600 rounded-md hover:bg-green-700">Apply</button>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                    <hr className="border-gray-600" />
-                    <div className="flex flex-col gap-4 flex-grow min-h-0">
-                        <h3 className="text-lg font-bold text-white">IMAGE TRAY</h3>
-                        <div>
-                            <label htmlFor="file-upload" className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-600 border-dashed rounded-lg cursor-pointer bg-gray-700 hover:bg-gray-600 gap-2 text-center">
-                                <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                                   <p className="mb-2 text-sm text-gray-400"><span className="font-semibold">Upload Screens</span></p>
-                                   <p className="text-xs text-gray-500">PNG, JPG, or ZIP</p>
-                                </div>
-                                <input id="file-upload" type="file" className="hidden" multiple onChange={(e) => handleFileUpload(Array.from(e.target.files))} />
-                            </label>
-                        </div>
-                        <div className="flex-grow overflow-y-auto p-2 bg-gray-900/50 rounded-lg flex flex-row lg:flex-col flex-wrap gap-3">
-                            {uploadedFiles.length > 0 ? uploadedFiles.map((file, index) => (
-                                <div key={index} draggable onDragStart={(e) => handleDragStart(e, file)} className="w-24 h-24 border-2 border-gray-600 rounded-md cursor-grab">
-                                    <img src={URL.createObjectURL(file)} alt={file.name} className="w-full h-full object-cover"/>
-                                </div>
-                            )) : <p className="text-gray-500 self-center mx-auto text-center">Uploaded images will appear here.</p>}
-                        </div>
+                    <div className="flex justify-end mb-4">
+                        <a href="/api/github-login" title="Connect to GitHub" className="bg-gray-700 hover:bg-green-700 text-white p-2 rounded-full flex items-center justify-center">
+                            <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M12 .5C5.73.5.5 5.73.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56 0-.28-.01-1.02-.02-2-3.2.7-3.88-1.54-3.88-1.54-.53-1.34-1.3-1.7-1.3-1.7-1.06-.72.08-.71.08-.71 1.17.08 1.78 1.2 1.78 1.2 1.04 1.78 2.73 1.27 3.4.97.11-.75.41-1.27.74-1.56-2.55-.29-5.23-1.28-5.23-5.7 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.18 1.18a11.1 11.1 0 012.9-.39c.98 0 1.97.13 2.9.39 2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.84 1.19 3.1 0 4.43-2.69 5.41-5.25 5.7.42.36.79 1.09.79 2.2 0 1.59-.01 2.87-.01 3.26 0 .31.21.68.8.56C20.71 21.39 24 17.08 24 12c0-6.27-5.23-11.5-12-11.5z"/></svg>
+                        </a>
                     </div>
                 </aside>
                 <main className="flex-grow flex flex-col gap-6 min-w-0">
@@ -847,6 +791,7 @@ const AppLabGenerateView = ({ onNavigate, initialPlatform }) => {
     const [reviewLoading, setReviewLoading] = useState(false);
     const [reviewError, setReviewError] = useState(null);
     const [reviewResult, setReviewResult] = useState(null);
+    const [figmaUrl, setFigmaUrl] = useState('');
 
 
     const handleFileUpload = useCallback(async (files) => {
