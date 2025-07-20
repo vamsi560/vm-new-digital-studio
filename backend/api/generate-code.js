@@ -1,9 +1,6 @@
 import formidable from 'formidable';
 import fs from 'fs/promises';
-import {
-  callGenerativeAI,
-  parseJsonWithCorrection
-} from './utils/shared.js';
+const { callGenerativeAI, parseJsonWithCorrection } = require('./utils/shared.js');
 
 // Helper: Convert uploaded file to GenerativePart
 async function fileToGenerativePart(file) {
