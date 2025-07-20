@@ -27,33 +27,8 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'No screens were uploaded.' });
     }
 
-    // Enhanced prompt for dynamic package.json and detailed analysis
-    const prompt = `You are an expert React developer. Given the following screen mockups, perform the following:
-
-1. Analyze the screens and list all unique screens/pages detected, with a brief description for each.
-2. List all reusable UI components you would extract, with a short description for each.
-3. Generate a complete, production-ready React app using Tailwind CSS:
-   - Use a scalable file/folder structure.
-   - Extract and reuse components where possible.
-   - Add PropTypes and JSDoc comments to all components.
-   - Ensure all imports are correct.
-   - Output a manifest JSON listing all files and their purposes.
-   - Generate a package.json that includes only the dependencies actually required by the generated code (analyze all imports and features).
-   - Include public/index.html, src/index.js, src/App.jsx, components, pages, and a README.md.
-   - All code should be valid and ready to run.
-4. Evaluate how well the generated React app matches the uploaded screens. Give a score (0-10) and a short justification.
-
-Respond with a single JSON object:
-{
-  analysis: {
-    screens: [ { name, description } ],
-    components: [ { name, description } ],
-    summary: string
-  },
-  manifest: { ... },
-  files: { path: content, ... },
-  qa: { score: number, justification: string }
-}`;
+    // Enhanced prompt for dynamic package.json
+    const prompt = `You are an expert React developer. Given the following screen mockups, generate a complete, production-ready React app using Tailwind CSS.\n\n- Use a scalable file/folder structure.\n- Extract and reuse components where possible.\n- Add PropTypes and JSDoc comments to all components.\n- Ensure all imports are correct.\n- Output a manifest JSON listing all files and their purposes.\n- Generate a package.json that includes only the dependencies actually required by the generated code (analyze all imports and features).\n- Include public/index.html, src/index.js, src/App.jsx, components, pages, and a README.md.\n- All code should be valid and ready to run.\n- Respond with a single JSON object: { manifest, files: { path: content, ... } }.`;
 
     // Convert all uploaded files to the format the AI model expects
     const imageParts = await Promise.all(uploadedScreens.map(fileToGenerativePart));
@@ -64,7 +39,7 @@ Respond with a single JSON object:
     } catch {
       parsed = await parseJsonWithCorrection(aiResponse, prompt, imageParts);
     }
-    let { files: generatedFiles, manifest, analysis, qa } = parsed;
+    let { files: generatedFiles, manifest } = parsed;
     if (!generatedFiles || typeof generatedFiles !== 'object') generatedFiles = {};
 
     // --- DYNAMIC PACKAGE.JSON HANDLING ---
@@ -111,7 +86,7 @@ root.render(<React.StrictMode><App />\u003c/React.StrictMode>);`;
       generatedFiles['README.md'] = `# Generated React App\n\nThis project was generated automatically.\n\n## Setup\n\n1. Install dependencies:\n\n   npm install\n\n2. Start the app:\n\n   npm start\n`;
     }
 
-    res.status(200).json({ generatedFiles, manifest, analysis, qa });
+    res.status(200).json({ generatedFiles, manifest });
   } catch (error) {
     console.error('Error in generate-code API:', error);
     res.status(500).json({ error: `Failed to generate code: ${error.message}` });
