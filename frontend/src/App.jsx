@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { LiveProvider, LivePreview, LiveError } from 'react-live';
+import Cookies from 'js-cookie';
 
 // --- Reusable UI Components ---
 
@@ -98,20 +100,20 @@ const LandingView = ({ onNavigate }) => (
         <div className="w-full max-w-8xl h-[700px] bg-[#121212] rounded-xl shadow-2xl flex flex-col border border-gray-700/50 mx-auto pt-12">
             <div className="flex-shrink-0 h-11 flex items-center justify-center relative border-b border-gray-700/50">
                 <TrafficLights />
-                <p className="text-sm text-gray-400">VM Digital Studio</p>
+                <p className="text-sm text-gray-400"></p>
             </div>
             <div className="flex-grow p-9 flex items-center justify-center overflow-y-auto">
                  <div className="w-full max-w-4xl mx-auto text-center">
                     <header className="mb-12 md:mb-16">
                         <div className="inline-flex items-center space-x-3 mb-2">
                             <div className="border border-gray-600 p-2 rounded-lg"><span className="font-bold text-3xl text-white">VM</span></div>
-                            <span className="text-3xl font-bold text-white">Digital Studio</span>
+                            <span className="text-3xl font-bold text-green-500">Digital Studio</span>
                         </div>
                     </header>
                     <main>
                         <h1 className="text-4xl md:text-6xl font-bold leading-tight mb-12 md:mb-16">
                             <span className="text-white">Introducing </span>
-                            <span className="bg-gradient-to-r from-green-400 to-emerald-600 text-transparent bg-clip-text">Digital Studio</span>
+                            <span className="bg-gradient-to-r from-green-400 to-emerald-600 text-transparent bg-clip-text"></span>
                         </h1>
                         <section>
                             <h2 className="text-xl text-gray-400 mb-8">We do ui/ux design for</h2>
@@ -941,6 +943,14 @@ const IntegrationLabView = ({ onNavigate }) => {
 function App() {
     const [view, setView] = useState('initial');
     const [appLabPlatform, setAppLabPlatform] = useState('android');
+    const [isGithubAuthenticated, setIsGithubAuthenticated] = useState(false);
+    const [githubExportStatus, setGithubExportStatus] = useState(null); // { loading, error, url }
+    const [showExportModal, setShowExportModal] = useState(false);
+    const [repoNameInput, setRepoNameInput] = useState('my-digital-studio-export');
+    const [error, setError] = useState('');
+    const [selectedFile, setSelectedFile] = useState(null);
+    const [generatedFiles, setGeneratedFiles] = useState({});
+    const [livePreviewCode, setLivePreviewCode] = useState('');
     const [isJsZipLoaded, setIsJsZipLoaded] = useState(false);
 
     useEffect(() => {
@@ -958,6 +968,10 @@ function App() {
             // Clean up the script tag if the App component unmounts
             document.body.removeChild(script);
         };
+    }, []);
+
+    useEffect(() => {
+        setIsGithubAuthenticated(!!Cookies.get('github_token'));
     }, []);
 
     const handleNavigate = (targetView, platform) => {
@@ -985,12 +999,88 @@ function App() {
         }
     };
 
+    // Export to GitHub logic
+    const handleExportToGithub = async () => {
+      setGithubExportStatus({ loading: true });
+      setShowExportModal(false);
+      try {
+        const res = await fetch('/api/github-export', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            repoName: repoNameInput,
+            files: generatedFiles
+          })
+        });
+        if (res.status === 401) {
+          setIsGithubAuthenticated(false);
+          setGithubExportStatus({ error: 'Not authenticated with GitHub. Please connect your account.' });
+          return;
+        }
+        if (!res.ok) {
+          const err = await res.json();
+          setGithubExportStatus({ error: err.error || 'Export failed.' });
+          return;
+        }
+        const data = await res.json();
+        setGithubExportStatus({ url: data.url });
+      } catch (err) {
+        setGithubExportStatus({ error: err.message });
+      }
+    };
+
     return (
         <div className="bg-black text-white min-h-screen flex justify-center">
         <main className="relative w-full max-w-[2600px] mx-auto h-screen px-2 md:px-4" style={{ transform: 'scale(0.85)', transformOrigin: 'top center' }}>
+            {/* Small GitHub icon in the top right */}
+            <div className="absolute top-4 right-4 z-50">
+                {!isGithubAuthenticated ? (
+                    <a href="/api/github-login" title="Connect to GitHub" className="bg-gray-700 hover:bg-green-700 text-white p-2 rounded-full flex items-center justify-center">
+                        <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M12 .5C5.73.5.5 5.73.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56 0-.28-.01-1.02-.02-2-3.2.7-3.88-1.54-3.88-1.54-.53-1.34-1.3-1.7-1.3-1.7-1.06-.72.08-.71.08-.71 1.17.08 1.78 1.2 1.78 1.2 1.04 1.78 2.73 1.27 3.4.97.11-.75.41-1.27.74-1.56-2.55-.29-5.23-1.28-5.23-5.7 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.18 1.18a11.1 11.1 0 012.9-.39c.98 0 1.97.13 2.9.39 2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.84 1.19 3.1 0 4.43-2.69 5.41-5.25 5.7.42.36.79 1.09.79 2.2 0 1.59-.01 2.87-.01 3.26 0 .31.21.68.8.56C20.71 21.39 24 17.08 24 12c0-6.27-5.23-11.5-12-11.5z"/></svg>
+                    </a>
+                ) : (
+                    <button onClick={() => setShowExportModal(true)} className="bg-green-700 hover:bg-green-800 text-white p-2 rounded-full flex items-center justify-center" title="Export to GitHub">
+                        <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M12 .5C5.73.5.5 5.73.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56 0-.28-.01-1.02-.02-2-3.2.7-3.88-1.54-3.88-1.54-.53-1.34-1.3-1.7-1.3-1.7-1.06-.72.08-.71.08-.71 1.17.08 1.78 1.2 1.78 1.2 1.04 1.78 2.73 1.27 3.4.97.11-.75.41-1.27.74-1.56-2.55-.29-5.23-1.28-5.23-5.7 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.18 1.18a11.1 11.1 0 012.9-.39c.98 0 1.97.13 2.9.39 2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.84 1.19 3.1 0 4.43-2.69 5.41-5.25 5.7.42.36.79 1.09.79 2.2 0 1.59-.01 2.87-.01 3.26 0 .31.21.68.8.56C20.71 21.39 24 17.08 24 12c0-6.27-5.23-11.5-12-11.5z"/></svg>
+                    </button>
+                )}
+            </div>
+            {/* Export Modal */}
+            {showExportModal && (
+                <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/70">
+                    <div className="bg-gray-900 border border-gray-700 rounded-lg shadow-xl w-full max-w-md p-6 relative">
+                        <button onClick={() => setShowExportModal(false)} className="absolute top-4 right-4 text-gray-400 hover:text-white text-2xl font-bold">&times;</button>
+                        <h2 className="text-xl font-bold text-green-400 mb-4">Export to GitHub</h2>
+                        <label className="block mb-2 text-gray-300 font-semibold">Repository Name</label>
+                        <input type="text" value={repoNameInput} onChange={e => setRepoNameInput(e.target.value)} className="w-full p-2 rounded bg-gray-800 border border-gray-700 text-white mb-4" />
+                        <button onClick={handleExportToGithub} className="w-full bg-green-700 hover:bg-green-800 text-white font-bold py-2 px-4 rounded">Export</button>
+                        {githubExportStatus && githubExportStatus.loading && (
+                            <div className="text-xs text-gray-300 bg-gray-800 px-2 py-1 rounded mt-2">Exporting...</div>
+                        )}
+                        {githubExportStatus && githubExportStatus.error && (
+                            <div className="text-xs text-red-400 bg-gray-800 px-2 py-1 rounded mt-2">{githubExportStatus.error}</div>
+                        )}
+                        {githubExportStatus && githubExportStatus.url && (
+                            <a href={githubExportStatus.url} target="_blank" rel="noopener noreferrer" className="text-xs text-green-400 underline bg-gray-800 px-2 py-1 rounded mt-2">View Repo</a>
+                        )}
+                    </div>
+                </div>
+            )}
+            {/* Main View */}
             {renderView()}
         </main>
         </div>
+    );
+}
+
+// Live React Component Preview (for .jsx/.js files)
+export function LiveComponentPreview({ code }) {
+    return (
+        <LiveProvider code={code} noInline={true} scope={{ React }}>
+            <div className="p-4 bg-gray-900 rounded mb-2">
+                <LivePreview />
+            </div>
+            <LiveError className="text-red-400 text-xs p-2" />
+        </LiveProvider>
     );
 }
 
