@@ -1,5 +1,3 @@
-// 📁 File: api/import-figma.js
-
 import axios from 'axios';
 
 function extractFileKey(figmaUrl) {
@@ -24,9 +22,11 @@ module.exports = async (req, res) => {
     // Find all top-level frames (pages > children)
     let frames = [];
     for (const page of document.children) {
-      for (const node of page.children) {
-        if (node.type === 'FRAME') {
-          frames.push({ id: node.id, name: node.name });
+      if (page.children) {
+        for (const node of page.children) {
+          if (node.type === 'FRAME') {
+            frames.push({ id: node.id, name: node.name });
+          }
         }
       }
     }
@@ -41,19 +41,34 @@ module.exports = async (req, res) => {
     const results = await Promise.all(frames.map(async (frame) => {
       const imageUrl = images[frame.id];
       if (!imageUrl) return null;
-      const imgResp = await axios.get(imageUrl, { responseType: 'arraybuffer' });
-      const mimeType = imgResp.headers['content-type'] || 'image/png';
-      const data = Buffer.from(imgResp.data, 'binary').toString('base64');
-      return {
-        fileName: `${frame.name.replace(/[^a-zA-Z0-9_-]/g, '_')}.png`,
-        data,
-        mimeType
-      };
+      try {
+        const imgResp = await axios.get(imageUrl, { responseType: 'arraybuffer' });
+        const mimeType = imgResp.headers['content-type'] || 'image/png';
+        const data = Buffer.from(imgResp.data, 'binary').toString('base64');
+        return {
+          fileName: `${frame.name.replace(/[^a-zA-Z0-9_-]/g, '_')}.png`,
+          data,
+          mimeType
+        };
+      } catch (imgErr) {
+        console.error(`Failed to download image for frame ${frame.name}:`, imgErr.message);
+        // Silently ignore frames that fail to download, or you could return an error indicator
+        return null;
+      }
     }));
 
-    res.status(200).json(results.filter(Boolean));
+    // Filter out any null results from failed downloads
+    const successfulResults = results.filter(Boolean);
+    if (successfulResults.length === 0) {
+      return res.status(500).json({ error: 'Could not download any images from Figma.' });
+    }
+
+    res.status(200).json(successfulResults);
+
   } catch (err) {
-    console.error('Error in /api/import-figma:', err.message);
-    res.status(500).json({ error: 'Failed to import from Figma', details: err.message });
+    console.error('Error in /api/import-figma:', err.response ? err.response.data : err.message);
+    const status = err.response ? err.response.status : 500;
+    const message = err.response ? err.response.data.err || 'Failed to import from Figma' : 'Internal Server Error';
+    res.status(status).json({ error: message, details: err.message });
   }
-}; 
+};
