@@ -28,7 +28,7 @@ export default async function handler(req, res) {
     }
 
     // Enhanced prompt for dynamic package.json
-    const prompt = `You are an expert React developer. Given the following screen mockups, generate a complete, production-ready React app using Tailwind CSS.\n\n- Use a scalable file/folder structure.\n- Extract and reuse components where possible.\n- Add PropTypes and JSDoc comments to all components.\n- Ensure all imports are correct.\n- Output a manifest JSON listing all files and their purposes.\n- Generate a package.json that includes only the dependencies actually required by the generated code (analyze all imports and features).\n- Include public/index.html, src/index.js, src/App.jsx, components, pages, and a README.md.\n- All code should be valid and ready to run.\n- Respond with a single JSON object: { manifest, files: { path: content, ... } }.`;
+    const prompt = `You are an expert React developer. Given the following screen mockups, generate a complete, production-ready React app using Tailwind CSS.\n\n- Use a scalable file/folder structure.\n- Extract and reuse components where possible.\n- Add PropTypes and JSDoc comments to all components.\n- Ensure all imports are correct.\n- Output a manifest JSON listing all files and their purposes.\n- Generate a package.json that includes only the dependencies actually required by the generated code (analyze all imports and features), including devDependencies for Tailwind CSS (tailwindcss, postcss, autoprefixer).\n- Include public/index.html, src/index.js, src/index.css, src/App.jsx, tailwind.config.js, postcss.config.js, components, pages, and a README.md.\n- All code should be valid and ready to run.\n- Respond with a single JSON object: { manifest, files: { path: content, ... } }.`;
 
     // Convert all uploaded files to the format the AI model expects
     const imageParts = await Promise.all(uploadedScreens.map(fileToGenerativePart));
@@ -57,6 +57,7 @@ export default async function handler(req, res) {
         version: '0.1.0',
         private: true,
         dependencies: {},
+        devDependencies: {},
         scripts: {
           start: 'react-scripts start',
           build: 'react-scripts build',
@@ -66,10 +67,14 @@ export default async function handler(req, res) {
     }
     // Ensure minimum required dependencies
     pkg.dependencies = pkg.dependencies || {};
+    pkg.devDependencies = pkg.devDependencies || {};
     if (!pkg.dependencies.react) pkg.dependencies.react = '^18.2.0';
     if (!pkg.dependencies['react-dom']) pkg.dependencies['react-dom'] = '^18.2.0';
     if (!pkg.dependencies['react-scripts']) pkg.dependencies['react-scripts'] = '5.0.1';
-    // Optionally ensure prop-types and tailwindcss if used in code (not implemented here for brevity)
+    // Optionally ensure prop-types and tailwindcss if used in code
+    if (!pkg.devDependencies.tailwindcss) pkg.devDependencies.tailwindcss = "^3.4.1";
+    if (!pkg.devDependencies.postcss) pkg.devDependencies.postcss = "^8.4.38";
+    if (!pkg.devDependencies.autoprefixer) pkg.devDependencies.autoprefixer = "^10.4.19";
     generatedFiles['package.json'] = JSON.stringify(pkg, null, 2);
 
     if (!generatedFiles['public/index.html']) {
@@ -79,8 +84,17 @@ export default async function handler(req, res) {
       generatedFiles['src/index.js'] = `import React from 'react';\nimport ReactDOM from 'react-dom/client';\nimport App from './App';\nimport './index.css';\n\nconst root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(<React.StrictMode><App />\u003c/React.StrictMode>);`;
     }
+    if (!generatedFiles['src/index.css']) {
+        generatedFiles['src/index.css'] = `@tailwind base;\n@tailwind components;\n@tailwind utilities;`;
+    }
+    if (!generatedFiles['tailwind.config.js']) {
+        generatedFiles['tailwind.config.js'] = `/** @type {import('tailwindcss').Config} */\nexport default {\n  content: [\n    "./index.html",\n    "./src/**/*.{js,ts,jsx,tsx}",\n  ],\n  theme: {\n    extend: {},\n  },\n  plugins: [],\n}`;
+    }
+    if (!generatedFiles['postcss.config.js']) {
+        generatedFiles['postcss.config.js'] = `export default {\n  plugins: {\n    tailwindcss: {},\n    autoprefixer: {},\n  },\n}`;
+    }
     if (!generatedFiles['src/App.jsx']) {
-      generatedFiles['src/App.jsx'] = `import React from 'react';\nexport default function App() {\n  return <div>Welcome to your generated React app!</div>;\n}`;
+      generatedFiles['src/App.jsx'] = `import React from 'react';\nexport default function App() {\n  return <div className="text-2xl font-bold text-center mt-10">Welcome to your generated React app!</div>;\n}`;
     }
     if (!generatedFiles['README.md']) {
       generatedFiles['README.md'] = `# Generated React App\n\nThis project was generated automatically.\n\n## Setup\n\n1. Install dependencies:\n\n   npm install\n\n2. Start the app:\n\n   npm start\n`;
