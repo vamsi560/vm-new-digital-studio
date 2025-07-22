@@ -185,7 +185,7 @@ const PrototypeView = ({ onNavigate, isJsZipLoaded }) => {
         setUploadedFiles(uploadedFiles.filter(f => f.name !== draggedItem.name));
         setDraggedItem(null);
     };
-    
+
     const handleFigmaImport = async () => {
         if (!figmaUrl) return;
         setIsLoading(true);
