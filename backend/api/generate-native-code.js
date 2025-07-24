@@ -1,27 +1,37 @@
 // 📁 File: api/generate-native-code.js
 
-const multer = require('multer');
-const upload = multer({ storage: multer.memoryStorage() });
-
-const {
+import multer from 'multer';
+import {
   bufferToGenerativePart,
   toPascalCase,
   callGenerativeAI,
   parseJsonWithCorrection
-} = require('./utils/shared');
+} from './utils/shared.js';
 
-module.exports = async (req, res) => {
+const upload = multer({ storage: multer.memoryStorage() });
+
+export default async function handler(req, res) {
   try {
-    await new Promise((resolve, reject) => upload.array('screens')(req, res, err => (err ? reject(err) : resolve())));
+    await new Promise((resolve, reject) =>
+      upload.array('screens')(req, res, err => (err ? reject(err) : resolve()))
+    );
 
     const { projectName = 'MyMobileApp', platform } = req.body;
     const screenFiles = req.files;
-    if (!screenFiles?.length) return res.status(400).json({ error: 'No screen images provided.' });
-    if (!['android', 'ios'].includes(platform)) return res.status(400).json({ error: 'A valid platform (android/ios) must be specified.' });
 
-    const imageParts = screenFiles.map(file => bufferToGenerativePart(file.buffer, file.mimetype));
+    if (!screenFiles?.length) {
+      return res.status(400).json({ error: 'No screen images provided.' });
+    }
+
+    if (!['android', 'ios'].includes(platform)) {
+      return res.status(400).json({ error: 'A valid platform (android/ios) must be specified.' });
+    }
+
+    const imageParts = screenFiles.map(file =>
+      bufferToGenerativePart(file.buffer, file.mimetype)
+    );
+
     let generatedFiles = {};
-
     const lang = platform === 'android' ? 'Kotlin with Jetpack Compose' : 'Swift with SwiftUI';
     const fileExt = platform === 'android' ? 'kt' : 'swift';
     const mainFileName = platform === 'android' ? 'MainActivity.kt' : 'ContentView.swift';
@@ -60,4 +70,4 @@ module.exports = async (req, res) => {
     console.error('Error in /api/generate-native-code:', err);
     res.status(500).json({ error: 'Internal server error.' });
   }
-};
+}
