@@ -47,7 +47,7 @@ export default async function handler(req, res) {
       const componentsJson = await callGenerativeAI(componentPrompt, imageParts);
       const components = await parseJsonWithCorrection(componentsJson, componentPrompt, imageParts);
       for (const name in components) {
-        generatedFiles[`components/${name}.${fileExt}`] = components[name];
+        generatedFiles[`components/${name}.${fileExt}`] = String(components[name]);
       }
     }
 
