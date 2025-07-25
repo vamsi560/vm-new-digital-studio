@@ -10,7 +10,7 @@ const apiKeys = [
   "AIzaSyBcR6rMwP9v8e2cN56gdnkWMhJtOWyP_uU"
 ].filter(Boolean);
 
-const models = (process.env.GEMINI_MODELS || "gemini-2.0-flash,gemini-2.5-flash,gemini-2.5-flash").split(',');
+const models = (process.env.GEMINI_MODELS || "gemini-1.5-flash,gemini-2.0-flash,gemini-2.5-flash").split(',');
 
 const clients = apiKeys.map(key => new GoogleGenerativeAI(key));
 let currentClientIndex = 0;
@@ -82,12 +82,22 @@ export async function parseJsonWithCorrection(jsonString, prompt, images = []) {
     try {
       const cleaned = jsonString.replace(/```[a-z]*|```/g, '').trim();
       return JSON.parse(cleaned);
-    } catch {
-      const correctionPrompt = `Fix the invalid JSON: \n${jsonString}`;
+    } catch (err) {
+      console.error("JSON parse failed, attempt", i + 1, ":", jsonString);
+      // Try to extract JSON object if possible
+      const match = jsonString.match(/{[\s\S]*}/);
+      if (match) {
+        try {
+          return JSON.parse(match[0]);
+        } catch (innerErr) {
+          console.error("Regex extraction parse failed:", match[0]);
+        }
+      }
+      const correctionPrompt = `Fix the invalid JSON below. Return only a valid JSON object, no explanations or extra text:\n\n${jsonString}`;
       jsonString = await callGenerativeAI(correctionPrompt, images);
     }
   }
-  throw new Error("Failed to parse corrected JSON");
+  throw new Error("Failed to parse corrected JSON. Last output: " + jsonString);
 }
 
 export function buildAppRouterPrompt(pages) {
