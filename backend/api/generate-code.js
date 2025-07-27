@@ -256,4 +256,17 @@ export default function App() {
           Welcome to your Generated React App!
         </h1>
         <p className="text-gray-600">
-          This app was generated automatically from your designs.
+          This app was generated automatically from your designs. Start editing to see changes.
+        </p>
+      </div>
+    </div>
+  );
+}
+`;
+    }
+
+    // --- End of handler ---
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+}
