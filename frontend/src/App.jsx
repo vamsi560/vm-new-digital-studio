@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { LiveProvider, LivePreview, LiveError } from 'react-live';
 import Cookies from 'js-cookie';
+import AdvancedReactPreview from './components/advanced-react-preview';
 
 // --- Reusable UI Components ---
 
@@ -148,6 +149,7 @@ const PrototypeView = ({ onNavigate, isJsZipLoaded }) => {
     const [figmaUrl, setFigmaUrl] = useState('');
     const [loadingText, setLoadingText] = useState('');
     const [error, setError] = useState('');
+    const [previewCode, setPreviewCode] = useState('');
 
 
     const handleFileUpload = useCallback(async (files) => {
@@ -325,6 +327,15 @@ const PrototypeView = ({ onNavigate, isJsZipLoaded }) => {
         }
     };
 
+    // Add a handler to set previewCode from generatedFiles
+    useEffect(() => {
+        // Example: auto-select main file for preview
+        if (generatedFiles && Object.keys(generatedFiles).length > 0) {
+            const mainFile = Object.keys(generatedFiles).find(f => f.endsWith('App.jsx') || f.endsWith('App.js'));
+            if (mainFile) setPreviewCode(generatedFiles[mainFile]);
+        }
+    }, [generatedFiles]);
+
     return (
         <div className="content-wrapper min-h-screen flex flex-col p-8 bg-[#0D0F18]">
             <button onClick={() => onNavigate('landing')} className="absolute top-5 left-5 z-50 bg-gray-800/80 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg">&larr; Back</button>
@@ -416,8 +427,14 @@ const PrototypeView = ({ onNavigate, isJsZipLoaded }) => {
                         </div>
                     )}
                     {Object.keys(generatedFiles).length > 0 && !isLoading && (
-                         <div className="w-full bg-gray-900 border border-gray-700 rounded-lg text-sm text-gray-200 relative mt-6">
+                        <div className="w-full bg-gray-900 border border-gray-700 rounded-lg text-sm text-gray-200 relative mt-6">
                             <div className="p-4 border-b border-gray-700"><h2 className="font-bold text-lg">Generated Code</h2></div>
+                            {/* --- Add React Preview UI --- */}
+                            <div className="p-4 border-b border-gray-700">
+                                <h3 className="font-bold text-lg mb-2">Live React Preview</h3>
+                                <AdvancedReactPreview code={previewCode} showAnalysis={true} />
+                            </div>
+                            {/* --- End React Preview UI --- */}
                             {accuracyResult && (
                                 <div className="p-4 border-b border-gray-700">
                                     <h3 className="font-bold text-lg mb-2">Estimated Accuracy</h3>
@@ -645,6 +662,12 @@ const AppLabGenerateView = ({ onNavigate, initialPlatform, isJsZipLoaded }) => {
                     {Object.keys(generatedFiles).length > 0 && !isLoading && (
                          <div className="w-full bg-gray-900 border border-gray-700 rounded-lg text-sm text-gray-200 relative mt-6">
                             <div className="p-4 border-b border-gray-700"><h2 className="font-bold text-lg">Generated Code</h2></div>
+                            {/* --- Add React Preview UI --- */}
+                            <div className="p-4 border-b border-gray-700">
+                                <h3 className="font-bold text-lg mb-2">Live React Preview</h3>
+                                <AdvancedReactPreview code={previewCode} showAnalysis={true} />
+                            </div>
+                            {/* --- End React Preview UI --- */}
                             {accuracyResult && (
                                 <div className="p-4 border-b border-gray-700">
                                     <h3 className="font-bold text-lg mb-2">Estimated Accuracy</h3>
