@@ -152,11 +152,13 @@ Respond with a single JSON object: { manifest, files: { path: content, ... } }`;
     const imageParts = await Promise.all(uploadedScreens.map(fileToGenerativePart));
     const aiResponse = await callGenerativeAI(prompt, imageParts, true);
     
+    // Clean AI response before parsing
+    let cleanedResponse = aiResponse.replace(/```[a-z]*|```/g, '').trim();
     let parsed;
     try {
-      parsed = JSON.parse(aiResponse);
+      parsed = JSON.parse(cleanedResponse);
     } catch {
-      parsed = await parseJsonWithCorrection(aiResponse, prompt, imageParts);
+      parsed = await parseJsonWithCorrection(cleanedResponse, prompt, imageParts);
     }
     
     let { files: generatedFiles, manifest } = parsed;
