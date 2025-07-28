@@ -265,6 +265,9 @@ export default function App() {
 `;
     }
 
+    // Send response with manifest and files
+    res.status(200).json({ manifest, files: generatedFiles });
+
     // --- End of handler ---
   } catch (error) {
     res.status(500).json({ error: 'Internal server error' });
