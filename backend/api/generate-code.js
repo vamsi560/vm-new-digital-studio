@@ -1,7 +1,7 @@
 // backend/api/generate-code.js (Enhanced Version)
 import formidable from 'formidable';
 import fs from 'fs/promises';
-import { callGenerativeAI, parseJsonWithCorrection } from './utils/shared.js';
+import { callMcpServer, parseJsonWithCorrection } from './utils/shared.js';
 
 // Helper: Convert uploaded file to GenerativePart
 async function fileToGenerativePart(file) {
@@ -157,7 +157,7 @@ Respond with a single JSON object: { manifest, files: { path: content, ... } }`;
     const maxRetries = 3;
     while (retries < maxRetries) {
       try {
-        aiResponse = await callGenerativeAI(prompt, imageParts, true);
+        aiResponse = await callMcpServer(prompt, imageParts, true);
         break;
       } catch (err) {
         if (err && err.message && err.message.includes('503')) {
