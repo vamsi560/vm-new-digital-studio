@@ -258,7 +258,7 @@ const PrototypeView = ({ onNavigate, isJsZipLoaded }) => {
             setWorkflowStatus(prev => ({ ...prev, text: 'Finisher & QA: Finalizing and checking quality...', composer: 'completed', finisher: 'running' }));
             await new Promise(res => setTimeout(res, 800));
 
-            setGeneratedFiles(data.generatedFiles);
+            setGeneratedFiles(data.files || {});
             setAccuracyResult(data.accuracyResult);
             setWorkflowStatus({ text: 'Done!', architect: 'completed', builder: 'completed', composer: 'completed', finisher: 'completed' });
 
@@ -582,7 +582,7 @@ const AppLabGenerateView = ({ onNavigate, initialPlatform, isJsZipLoaded }) => {
             setWorkflowStatus(prev => ({ ...prev, text: 'Finisher & QA: Finalizing and checking quality...', composer: 'completed', finisher: 'running' }));
             await new Promise(res => setTimeout(res, 800));
 
-            setGeneratedFiles(data.generatedFiles);
+            setGeneratedFiles(data.files || {});
             setAccuracyResult(data.accuracyResult);
             setWorkflowStatus({ text: 'Done!', architect: 'completed', builder: 'completed', composer: 'completed', finisher: 'completed' });
 
@@ -826,7 +826,7 @@ const IntegrationLabView = ({ onNavigate }) => {
             setWorkflowStatus(prev => ({ ...prev, text: 'Finisher & QA: Finalizing and checking quality...', composer: 'completed', finisher: 'running' }));
             await new Promise(res => setTimeout(res, 800));
 
-            setGeneratedFiles(data.generatedFiles);
+            setGeneratedFiles(data.files || {});
             setAccuracyResult(data.accuracyResult);
             setWorkflowStatus({ text: 'Done!', architect: 'completed', builder: 'completed', composer: 'completed', finisher: 'completed' });
 
