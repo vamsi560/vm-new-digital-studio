@@ -122,24 +122,25 @@ export default async function handler(req, res) {
     }
 
     // Enhanced prompt for better React generation with preview support
-    const prompt = `You are an expert React developer. Given the following screen mockups, generate a complete, production-ready React app using Tailwind CSS.
+    const prompt = `You are an expert React developer. Given the following screen mockups, generate a complete, production-ready React app using Tailwind CSS and TypeScript.
 
 Requirements:
 - Use a scalable file/folder structure
 - Extract and reuse components where possible
-- Add PropTypes and JSDoc comments to all components
+- Add PropTypes, JSDoc comments, and TypeScript types to all components
 - Ensure all imports are correct
 - All code should be valid and ready to run
 - Create components that are easily previewable in isolation
 - Use modern React patterns (hooks, functional components)
-- Make components responsive and accessible
+- Make components responsive and strictly accessible (WCAG 2.1 AA)
+- Prefer TypeScript (.tsx/.ts) files where possible
 
 Generate the following structure:
 - package.json with all required dependencies
 - public/index.html
-- src/index.js (entry point)
+- src/index.tsx (entry point)
 - src/index.css (Tailwind imports)
-- src/App.jsx (main app component)
+- src/App.tsx (main app component)
 - src/components/ (reusable components)
 - src/pages/ (page components if multiple screens)
 - tailwind.config.js
@@ -150,14 +151,36 @@ Respond with a single JSON object: { manifest, files: { path: content, ... } }`;
 
     // Convert all uploaded files to the format the AI model expects
     const imageParts = await Promise.all(uploadedScreens.map(fileToGenerativePart));
-    const aiResponse = await callGenerativeAI(prompt, imageParts, true);
+
+    let aiResponse;
+    let retries = 0;
+    const maxRetries = 3;
+    while (retries < maxRetries) {
+      try {
+        aiResponse = await callGenerativeAI(prompt, imageParts, true);
+        break;
+      } catch (err) {
+        if (err && err.message && err.message.includes('503')) {
+          retries++;
+          if (retries === maxRetries) throw err;
+          await new Promise(r => setTimeout(r, 1000 * retries)); // Exponential backoff
+        } else {
+          throw err;
+        }
+      }
+    }
     
-    // Clean AI response before parsing
-    let cleanedResponse = aiResponse.replace(/```[a-z]*|```/g, '').trim();
+    // Clean AI response before parsing (robust)
+    let cleanedResponse = aiResponse
+      .replace(/```[a-z]*|```/gi, '')
+      .replace(/^[^\{]*?(\{[\s\S]*\})[^\}]*$/m, '$1') // Try to extract JSON object
+      .trim();
     let parsed;
     try {
       parsed = JSON.parse(cleanedResponse);
-    } catch {
+    } catch (err) {
+      console.error('Raw AI response:', aiResponse); // Log for debugging
+      console.error('Cleaned response:', cleanedResponse);
       parsed = await parseJsonWithCorrection(cleanedResponse, prompt, imageParts);
     }
     
