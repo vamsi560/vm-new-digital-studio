@@ -2,6 +2,7 @@
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import dotenv from 'dotenv';
+import fetch from 'node-fetch';
 dotenv.config();
 
 const apiKeys = [
@@ -108,4 +109,23 @@ export function buildAppRouterPrompt(pages) {
   }
 
   return `You are an expert React developer. Generate App.js for a multi-page React app.\nImport and route the following pages using react-router-dom:\n${pages.map(p => `- import ${p} from './pages/${p}';`).join('\n')}\nCreate a simple Nav with NavLinks. First page is home ('/'). Use clean Tailwind CSS.`;
+}
+
+/**
+ * Calls the MCP server for code generation.
+ * @param {string} prompt - The prompt to send.
+ * @param {Array} imageParts - The image parts to send.
+ * @param {boolean} [stream=false] - Whether to stream the response.
+ * @returns {Promise<string>} - The response from the MCP server.
+ */
+export async function callMcpServer(prompt, imageParts, stream = false) {
+  const response = await fetch(process.env.MCP_SERVER_URL || 'http://localhost:5001/generate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ prompt, imageParts, stream })
+  });
+  if (!response.ok) {
+    throw new Error(`MCP server error: ${response.status} ${response.statusText}`);
+  }
+  return await response.text();
 }
