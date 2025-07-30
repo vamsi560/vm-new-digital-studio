@@ -318,8 +318,18 @@ function generateAdvancedPreviewHTML(code, analysis) {
         });
 
         // User's component code (with error handling)
+        // Process the code to handle imports properly
+        let processedCode = \`${code}\`;
+        
+        // Remove import statements from the code since they're not needed in this context
+        // React and ReactDOM are already available globally
+        processedCode = processedCode.replace(/import\\s+.*?from\\s+['"][^'"]+['"];?\\n?/g, '');
+        processedCode = processedCode.replace(/export\\s+default\\s+/g, 'window.UserComponent = ');
+        processedCode = processedCode.replace(/export\\s+/g, '');
+        
         try {
-            ${code}
+            // Execute the processed code
+            eval(processedCode);
         } catch (syntaxError) {
             console.error('Syntax error in component code:', syntaxError);
             const ErrorDisplay = () => (
