@@ -328,8 +328,10 @@ function generateAdvancedPreviewHTML(code, analysis) {
         processedCode = processedCode.replace(/export\\s+/g, '');
         
         try {
-            // Execute the processed code
-            eval(processedCode);
+            // Transform JSX to JS using Babel
+            const transpiledCode = Babel.transform(processedCode, { presets: ['react'] }).code;
+            // Execute the transpiled code
+            eval(transpiledCode);
         } catch (syntaxError) {
             console.error('Syntax error in component code:', syntaxError);
             const ErrorDisplay = () => (
