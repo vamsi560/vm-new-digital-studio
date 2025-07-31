@@ -337,13 +337,27 @@ function generateAdvancedPreviewHTML(code, analysis) {
         // Remove import statements from the code since they're not needed in this context
         // React and ReactDOM are already available globally
         processedCode = processedCode.replace(/import\\s+.*?from\\s+['"][^'"]+['"];?\\n?/g, '');
+        
+        // Remove TypeScript type annotations that might cause issues
+        processedCode = processedCode.replace(/:\\s*JSX\\.Element/g, '');
+        processedCode = processedCode.replace(/:\\s*React\\.FC/g, '');
+        processedCode = processedCode.replace(/:\\s*React\\.ComponentType/g, '');
+        processedCode = processedCode.replace(/:\\s*React\\.ComponentProps/g, '');
+        processedCode = processedCode.replace(/:\\s*React\\.ReactElement/g, '');
+        processedCode = processedCode.replace(/:\\s*React\\.ReactNode/g, '');
+        processedCode = processedCode.replace(/:\\s*any/g, '');
+        processedCode = processedCode.replace(/:\\s*string/g, '');
+        processedCode = processedCode.replace(/:\\s*number/g, '');
+        processedCode = processedCode.replace(/:\\s*boolean/g, '');
+        processedCode = processedCode.replace(/:\\s*void/g, '');
+        
         processedCode = processedCode.replace(/export\\s+default\\s+/g, 'window.UserComponent = ');
         processedCode = processedCode.replace(/export\\s+/g, '');
         
         try {
             // Transform JSX/TSX to JS using Babel
             const transpiledCode = Babel.transform(processedCode, { 
-                presets: ['react', 'typescript'] 
+                presets: ['react'] 
             }).code;
             // Execute the transpiled code
             eval(transpiledCode);
