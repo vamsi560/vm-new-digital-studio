@@ -301,6 +301,19 @@ function generateAdvancedPreviewHTML(code, analysis) {
             }
         };
 
+        // Mock common components that might be missing
+        const mockComponents = {
+            Header: () => React.createElement('header', {style: {padding: '1rem', background: '#f3f4f6'}}, 'Header Component'),
+            Footer: () => React.createElement('footer', {style: {padding: '1rem', background: '#f3f4f6'}}, 'Footer Component'),
+            Sidebar: () => React.createElement('aside', {style: {padding: '1rem', background: '#e5e7eb'}}, 'Sidebar Component'),
+            Navigation: () => React.createElement('nav', {style: {padding: '1rem', background: '#d1d5db'}}, 'Navigation Component'),
+            Layout: ({children}) => React.createElement('div', {style: {display: 'flex', flexDirection: 'column', minHeight: '100vh'}}, children),
+            Container: ({children}) => React.createElement('div', {style: {maxWidth: '1200px', margin: '0 auto', padding: '0 1rem'}}, children)
+        };
+
+        // Make mock components globally available
+        Object.assign(window, mockComponents);
+
         // Global error handler
         window.addEventListener('error', (event) => {
             console.error('Global error:', event.error);
