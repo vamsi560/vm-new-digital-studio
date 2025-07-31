@@ -338,18 +338,24 @@ function generateAdvancedPreviewHTML(code, analysis) {
         // React and ReactDOM are already available globally
         processedCode = processedCode.replace(/import\\s+.*?from\\s+['"][^'"]+['"];?\\n?/g, '');
         
-        // Remove TypeScript type annotations that might cause issues
-        processedCode = processedCode.replace(/:\\s*JSX\\.Element/g, '');
-        processedCode = processedCode.replace(/:\\s*React\\.FC/g, '');
-        processedCode = processedCode.replace(/:\\s*React\\.ComponentType/g, '');
-        processedCode = processedCode.replace(/:\\s*React\\.ComponentProps/g, '');
-        processedCode = processedCode.replace(/:\\s*React\\.ReactElement/g, '');
-        processedCode = processedCode.replace(/:\\s*React\\.ReactNode/g, '');
-        processedCode = processedCode.replace(/:\\s*any/g, '');
-        processedCode = processedCode.replace(/:\\s*string/g, '');
-        processedCode = processedCode.replace(/:\\s*number/g, '');
-        processedCode = processedCode.replace(/:\\s*boolean/g, '');
-        processedCode = processedCode.replace(/:\\s*void/g, '');
+        // Remove TypeScript type annotations (function return types, parameter types, interfaces, types)
+        processedCode = processedCode
+          // Remove function return types: function App(): JSX.Element
+          .replace(/function\s+\w+\s*\([^)]*\)\s*:\s*[^\{]+\{/g, match =>
+            match.replace(/:\s*[^\{]+\{/, '{')
+          )
+          // Remove arrow function return types: const X = (...) : JSX.Element =>
+          .replace(/=\s*\([^)]*\)\s*:\s*[^=]+=>/g, match =>
+            match.replace(/:\s*[^=]+=>/, '=>')
+          )
+          // Remove parameter types: (foo: string, bar: number)
+          .replace(/\([^)]+\)/g, params =>
+            params.replace(/:\s*\w+/g, '')
+          )
+          // Remove interface/type declarations
+          .replace(/(interface|type)\s+\w+[^{=]*[\{=][^\}]*\}/g, '')
+          // Remove any remaining : Type after variable names
+          .replace(/:\s*\w+/g, '');
         
         processedCode = processedCode.replace(/export\\s+default\\s+/g, 'window.UserComponent = ');
         processedCode = processedCode.replace(/export\\s+/g, '');
