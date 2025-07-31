@@ -328,8 +328,10 @@ function generateAdvancedPreviewHTML(code, analysis) {
         processedCode = processedCode.replace(/export\\s+/g, '');
         
         try {
-            // Transform JSX to JS using Babel
-            const transpiledCode = Babel.transform(processedCode, { presets: ['react'] }).code;
+            // Transform JSX/TSX to JS using Babel
+            const transpiledCode = Babel.transform(processedCode, { 
+                presets: ['react', 'typescript'] 
+            }).code;
             // Execute the transpiled code
             eval(transpiledCode);
         } catch (syntaxError) {
