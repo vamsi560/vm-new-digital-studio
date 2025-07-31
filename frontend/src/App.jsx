@@ -331,7 +331,7 @@ const PrototypeView = ({ onNavigate, isJsZipLoaded }) => {
     useEffect(() => {
         // Example: auto-select main file for preview
         if (generatedFiles && Object.keys(generatedFiles).length > 0) {
-            const mainFile = Object.keys(generatedFiles).find(f => f.endsWith('App.jsx') || f.endsWith('App.js'));
+            const mainFile = Object.keys(generatedFiles).find(f => f.endsWith('App.jsx') || f.endsWith('App.js') || f.endsWith('App.tsx'));
             if (mainFile) setPreviewCode(generatedFiles[mainFile]);
         }
     }, [generatedFiles]);
