@@ -242,27 +242,27 @@ root.render(
     }
 
     if (!generatedFiles['src/index.css']) {
-      generatedFiles['src/index.css'] = `@tailwind base;
-@tailwind components;
-@tailwind utilities;`;
+      generatedFiles['src/index.css'] = `@tailwind base;\n@tailwind components;\n@tailwind utilities;`;
     }
 
     if (!generatedFiles['tailwind.config.js']) {
       generatedFiles['tailwind.config.js'] = `/** @type {import('tailwindcss').Config} */
-export default {
-  content: [
-    "./index.html",
-    "./src/**/*.{js,ts,jsx,tsx}",
-  ],
+module.exports = {
+  content: ["./src/**/*.{js,jsx,ts,tsx}"],
   theme: {
-    extend: {},
+    extend: {
+      colors: {
+        'pure-green': '#00A896',
+        'pure-dark': '#222'
+      }
+    },
   },
   plugins: [],
 }`;
     }
 
     if (!generatedFiles['postcss.config.js']) {
-      generatedFiles['postcss.config.js'] = `export default {
+      generatedFiles['postcss.config.js'] = `module.exports = {
   plugins: {
     tailwindcss: {},
     autoprefixer: {},
@@ -270,24 +270,78 @@ export default {
 }`;
     }
 
-    if (!generatedFiles['src/App.jsx']) {
-      generatedFiles['src/App.jsx'] = `import React from 'react';
+    // --- DYNAMIC APP.JSX/TSX GENERATION ---
+    function generateAppJsx(screenNames, screenFolder = 'components', ext = 'jsx') {
+      if (screenNames.length === 1) {
+        // Single screen/component
+        return `import React from 'react';
+import ${screenNames[0]} from './${screenFolder}/${screenNames[0]}';
+
+export default function App() {
+  return <${screenNames[0]} />;
+}`;
+      } else if (screenNames.length > 1) {
+        // Multiple screens/components: use React Router
+        return `import React from 'react';
+import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
+${screenNames.map(name => `import ${name} from './${screenFolder}/${name}';`).join('\n')}
 
 export default function App() {
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold text-gray-800 mb-4">
-          Welcome to your Generated React App!
-        </h1>
-        <p className="text-gray-600">
-          This app was generated automatically from your designs. Start editing to see changes.
-        </p>
-      </div>
-    </div>
+    <BrowserRouter>
+      <nav style={{ padding: 16, marginBottom: 24 }}>
+        ${screenNames.map(name => {
+          const label = name.replace(/Screen$/, '').replace(/([A-Z])/g, ' $1').trim();
+          return `<Link key=\"${name}\" to=\"/${name}\"><button style={{marginRight: 8}}>${label}</button></Link>`;
+        }).join(' ')}
+      </nav>
+      <Routes>
+        ${screenNames.map(name => `<Route path=\"/${name}\" element={<${name} />} />`).join(' ')}
+        <Route path=\"*\" element={<${screenNames[0]} />} />
+      </Routes>
+    </BrowserRouter>
   );
-}
-`;
+}`;
+      } else {
+        // Fallback: no screens
+        return `import React from 'react';
+export default function App() {
+  return <div>No screens found.</div>;
+}`;
+      }
+    }
+
+    // Try screens folder first, then fallback to components
+    let screenFiles = Object.keys(generatedFiles)
+      .filter(path => path.startsWith('src/screens/') && path.match(/\.(jsx|tsx)$/));
+    let screenFolder = 'screens';
+
+    if (screenFiles.length === 0) {
+      screenFiles = Object.keys(generatedFiles)
+        .filter(path => path.startsWith('src/components/') && path.match(/\.(jsx|tsx)$/));
+      screenFolder = 'components';
+    }
+
+    const screenNames = screenFiles.map(path => path.match(/([^/]+)\.(jsx|tsx)$/)[1]);
+
+    // Generate App.jsx/tsx
+    if (!generatedFiles['src/App.jsx'] && !generatedFiles['src/App.tsx']) {
+      // Use .tsx if any screen/component is .tsx, else .jsx
+      const ext = screenFiles.some(f => f.endsWith('.tsx')) ? 'tsx' : 'jsx';
+      generatedFiles[`src/App.${ext}`] = generateAppJsx(screenNames, screenFolder, ext);
+    }
+
+    // --- Ensure react-router-dom in package.json if needed ---
+    if (screenNames.length > 1) {
+      let pkg = generatedFiles['package.json'];
+      if (pkg) {
+        let pkgObj = typeof pkg === 'string' ? JSON.parse(pkg) : pkg;
+        pkgObj.dependencies = pkgObj.dependencies || {};
+        if (!pkgObj.dependencies['react-router-dom']) {
+          pkgObj.dependencies['react-router-dom'] = '^6.22.3';
+        }
+        generatedFiles['package.json'] = JSON.stringify(pkgObj, null, 2);
+      }
     }
 
     // Send response with manifest and files
