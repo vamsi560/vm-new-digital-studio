@@ -21,7 +21,7 @@ function generateComponentPreview(componentCode, componentName) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${componentName} Preview</title>
+    <title>\${componentName} Preview</title>
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -63,7 +63,7 @@ function generateComponentPreview(componentCode, componentName) {
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(
             <ErrorBoundary>
-                <${componentName} />
+                <\${componentName} />
             </ErrorBoundary>
         );
     </script>
