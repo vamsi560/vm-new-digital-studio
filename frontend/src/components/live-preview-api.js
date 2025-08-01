@@ -331,34 +331,36 @@ function generateAdvancedPreviewHTML(code, analysis) {
         });
 
         // User's component code (with error handling)
-        // Process the code to handle imports properly
         let processedCode = \`${code}\`;
         
-        // Remove import statements from the code since they're not needed in this context
-        // React and ReactDOM are already available globally
-        processedCode = processedCode.replace(/import\\s+.*?from\\s+['"][^'"]+['"];?\\n?/g, '');
-        
-        // Remove TypeScript type annotations (function return types, parameter types, interfaces, types)
+        // --- TypeScript cleanup: remove type annotations & exports ---
         processedCode = processedCode
-          // Remove function return types: function App(): JSX.Element
-          .replace(/function\s+\w+\s*\([^)]*\)\s*:\s*[^\{]+\{/g, match =>
-            match.replace(/:\s*[^\{]+\{/, '{')
+          // Remove interface/type declarations (single-line or multiline)
+          .replace(/(interface|type)\s+\w+\s*[\s\S]*?\}/g, '')
+          
+          // Remove function return types like: function App(): JSX.Element
+          .replace(/function\s+(\w+)\s*\(([^)]*)\)\s*:\s*[^ {]+(\s*\{)/g, 'function $1($2)$3')
+          
+          // Remove arrow function return types like: const X = (...) : JSX.Element =>
+          .replace(/=\s*\(([^)]*)\)\s*:\s*[^=]+=>/g, '=($1)=>')
+          
+          // Remove parameter types like: (foo: string, bar: number)
+          .replace(/\(([^)]*)\)/g, (_, params) =>
+            `(${params.replace(/:\s*[\w\[\]<>|]+/g, '')})`
           )
-          // Remove arrow function return types: const X = (...) : JSX.Element =>
-          .replace(/=\s*\([^)]*\)\s*:\s*[^=]+=>/g, match =>
-            match.replace(/:\s*[^=]+=>/, '=>')
-          )
-          // Remove parameter types: (foo: string, bar: number)
-          .replace(/\([^)]+\)/g, params =>
-            params.replace(/:\s*\w+/g, '')
-          )
-          // Remove interface/type declarations
-          .replace(/(interface|type)\s+\w+[^{=]*[\{=][^\}]*\}/g, '')
-          // Remove any remaining : Type after variable names
-          .replace(/:\s*\w+/g, '');
         
-        processedCode = processedCode.replace(/export\\s+default\\s+/g, 'window.UserComponent = ');
-        processedCode = processedCode.replace(/export\\s+/g, '');
+          // Remove remaining return types like: : JSX.Element
+          .replace(/:\s*[\w\[\]<>|]+/g, '')
+        
+          // Remove import statements
+          .replace(/import\s+.*?from\s+['"][^'"]+['"];?\n?/g, '')
+        
+          // Convert `export default` to `window.UserComponent =`
+          .replace(/export\s+default\s+/g, 'window.UserComponent = ')
+        
+          // Remove any other `export` keywords
+          .replace(/export\s+/g, '');
+
         
         try {
             // Transform JSX/TSX to JS using Babel
