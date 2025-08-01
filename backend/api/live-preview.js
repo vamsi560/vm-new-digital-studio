@@ -409,29 +409,29 @@ function generateAdvancedPreviewHTML(code, analysis) {
         
         // Remove import statements from the code since they're not needed in this context
         // React and ReactDOM are already available globally
-        processedCode = processedCode.replace(/import\s+.*?from\s+['"][^'"]+['"];?\n?/g, '');
+        processedCode = processedCode.replace(/import\\s+.*?from\\s+['"][^'"]+['"];?\\n?/g, '');
         
         // Remove TypeScript type annotations (function return types, parameter types, interfaces, types)
         processedCode = processedCode
           // Remove function return types: function App(): JSX.Element
-          .replace(/function\s+\w+\s*\([^)]*\)\s*:\s*[^\{]+\{/g, match =>
-            match.replace(/:\s*[^\{]+\{/, '{')
+          .replace(/function\\s+\\w+\\s*\\([^)]*\\)\\s*:\\s*[^\\{]+\\{/g, match =>
+            match.replace(/:\\s*[^\\{]+\\{/, '{')
           )
           // Remove arrow function return types: const X = (...) : JSX.Element =>
-          .replace(/=\s*\([^)]*\)\s*:\s*[^=]+=>/g, match =>
-            match.replace(/:\s*[^=]+=>/, '=>')
+          .replace(/=\\s*\\([^)]*\\)\\s*:\\s*[^=]+=>/g, match =>
+            match.replace(/:\\s*[^=]+=>/, '=>')
           )
           // Remove parameter types: (foo: string, bar: number)
-          .replace(/\([^)]+\)/g, params =>
-            params.replace(/:\s*\w+/g, '')
+          .replace(/\\([^)]+\\)/g, params =>
+            params.replace(/:\\s*\\w+/g, '')
           )
           // Remove interface/type declarations
-          .replace(/(interface|type)\s+\w+[^{=]*[\{=][^\}]*\}/g, '')
+          .replace(/(interface|type)\\s+\\w+[^{=]*[\\{=][^\\}]*\\}/g, '')
           // Remove any remaining : Type after variable names
-          .replace(/:\s*\w+/g, '');
+          .replace(/:\\s*\\w+/g, '');
         
-        processedCode = processedCode.replace(/export\s+default\s+/g, 'window.UserComponent = ');
-        processedCode = processedCode.replace(/export\s+/g, '');
+        processedCode = processedCode.replace(/export\\s+default\\s+/g, 'window.UserComponent = ');
+        processedCode = processedCode.replace(/export\\s+/g, '');
         
         try {
             // Transform JSX to JS using Babel
