@@ -343,9 +343,53 @@ function generateAdvancedPreviewHTML(code, analysis) {
             }
         };
 
-        // Global error handler
+        // Mock common components that might be missing
+        const mockComponents = {
+            Header: () => React.createElement('header', {style: {padding: '1rem', background: '#f3f4f6'}}, 'Header Component'),
+            Footer: () => React.createElement('footer', {style: {padding: '1rem', background: '#f3f4f6'}}, 'Footer Component'),
+            Sidebar: () => React.createElement('aside', {style: {padding: '1rem', background: '#e5e7eb'}}, 'Sidebar Component'),
+            Navigation: () => React.createElement('nav', {style: {padding: '1rem', background: '#d1d5db'}}, 'Navigation Component'),
+            Layout: ({children}) => React.createElement('div', {style: {display: 'flex', flexDirection: 'column', minHeight: '100vh'}}, children),
+            Container: ({children}) => React.createElement('div', {style: {maxWidth: '1200px', margin: '0 auto', padding: '0 1rem'}}, children),
+            Button: ({children, ...props}) => React.createElement('button', {style: {padding: '8px 16px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer'}, ...props}, children),
+            Card: ({children, ...props}) => React.createElement('div', {style: {padding: '1rem', border: '1px solid #e5e7eb', borderRadius: '8px', background: 'white'}, ...props}, children),
+            Input: ({...props}) => React.createElement('input', {style: {padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: '4px', width: '100%'}, ...props}),
+            Text: ({children, ...props}) => React.createElement('p', {style: {margin: '0'}, ...props}, children),
+            Title: ({children, ...props}) => React.createElement('h1', {style: {margin: '0 0 1rem 0', fontSize: '1.5rem', fontWeight: 'bold'}, ...props}, children),
+            Subtitle: ({children, ...props}) => React.createElement('h2', {style: {margin: '0 0 0.5rem 0', fontSize: '1.25rem', fontWeight: '600'}, ...props}, children),
+            Div: ({children, ...props}) => React.createElement('div', props, children),
+            Span: ({children, ...props}) => React.createElement('span', props, children),
+            Image: ({src, alt, ...props}) => React.createElement('img', {src, alt, style: {maxWidth: '100%', height: 'auto'}, ...props}),
+            List: ({children, ...props}) => React.createElement('ul', {style: {margin: '0', padding: '0 0 0 1.5rem'}, ...props}, children),
+            ListItem: ({children, ...props}) => React.createElement('li', {style: {margin: '0.25rem 0'}, ...props}, children)
+        };
+
+        // Make mock components globally available
+        Object.assign(window, mockComponents);
+        
+        // Also make them available as global variables
+        Object.keys(mockComponents).forEach(key => {
+            window[key] = mockComponents[key];
+        });
+        
+        // Create a global components object for easier access
+        window.Components = mockComponents;
+
+        // Enhanced global error handler with component fallbacks
         window.addEventListener('error', (event) => {
             console.error('Global error:', event.error);
+            
+            // Check if it's a component not defined error
+            if (event.error && event.error.message && event.error.message.includes('is not defined')) {
+                const componentName = event.error.message.match(/(\w+) is not defined/)?.[1];
+                if (componentName && mockComponents[componentName]) {
+                    // Provide the missing component
+                    window[componentName] = mockComponents[componentName];
+                    console.log(\`Auto-provided missing component: \${componentName}\`);
+                    return; // Don't send error to parent
+                }
+            }
+            
             if (window.parent) {
                 window.parent.postMessage({
                     type: 'PREVIEW_ERROR',
@@ -361,13 +405,33 @@ function generateAdvancedPreviewHTML(code, analysis) {
 
         // User's component code (with error handling)
         // Process the code to handle imports properly
-        let processedCode = \`${code}\`;
+        let processedCode = \`\${code}\`;
         
         // Remove import statements from the code since they're not needed in this context
         // React and ReactDOM are already available globally
-        processedCode = processedCode.replace(/import\\s+.*?from\\s+['"][^'"]+['"];?\\n?/g, '');
-        processedCode = processedCode.replace(/export\\s+default\\s+/g, 'window.UserComponent = ');
-        processedCode = processedCode.replace(/export\\s+/g, '');
+        processedCode = processedCode.replace(/import\s+.*?from\s+['"][^'"]+['"];?\n?/g, '');
+        
+        // Remove TypeScript type annotations (function return types, parameter types, interfaces, types)
+        processedCode = processedCode
+          // Remove function return types: function App(): JSX.Element
+          .replace(/function\s+\w+\s*\([^)]*\)\s*:\s*[^\{]+\{/g, match =>
+            match.replace(/:\s*[^\{]+\{/, '{')
+          )
+          // Remove arrow function return types: const X = (...) : JSX.Element =>
+          .replace(/=\s*\([^)]*\)\s*:\s*[^=]+=>/g, match =>
+            match.replace(/:\s*[^=]+=>/, '=>')
+          )
+          // Remove parameter types: (foo: string, bar: number)
+          .replace(/\([^)]+\)/g, params =>
+            params.replace(/:\s*\w+/g, '')
+          )
+          // Remove interface/type declarations
+          .replace(/(interface|type)\s+\w+[^{=]*[\{=][^\}]*\}/g, '')
+          // Remove any remaining : Type after variable names
+          .replace(/:\s*\w+/g, '');
+        
+        processedCode = processedCode.replace(/export\s+default\s+/g, 'window.UserComponent = ');
+        processedCode = processedCode.replace(/export\s+/g, '');
         
         try {
             // Transform JSX to JS using Babel
@@ -404,7 +468,7 @@ function generateAdvancedPreviewHTML(code, analysis) {
                     if (window.parent) {
                         window.parent.postMessage({
                             type: 'PREVIEW_READY',
-                            componentName: '${componentName}',
+                            componentName: '\${componentName}',
                             timestamp: new Date().toISOString()
                         }, '*');
                     }
@@ -417,12 +481,12 @@ function generateAdvancedPreviewHTML(code, analysis) {
                 return (
                     <div className="loading">
                         <div className="loading-spinner"></div>
-                        <span>Initializing ${componentName}...</span>
+                        <span>Initializing \${componentName}...</span>
                     </div>
                 );
             }
 
-            const ComponentToRender = window.UserComponent || ${componentName};
+            const ComponentToRender = window.UserComponent || \${componentName};
             return <ComponentToRender />;
         };
         
