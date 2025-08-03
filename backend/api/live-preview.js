@@ -430,47 +430,7 @@ function generateAdvancedPreviewHTML(code, analysis) {
             Image: ({src, alt, ...props}) => React.createElement('img', {src, alt, style: {maxWidth: '100%', height: 'auto'}, ...props}),
             List: ({children, ...props}) => React.createElement('ul', {style: {margin: '0', padding: '0 0 0 1.5rem'}, ...props}, children),
             ListItem: ({children, ...props}) => React.createElement('li', {style: {margin: '0.25rem 0'}, ...props}, children),
-            Login: () => React.createElement('div', {
-                style: {
-                    padding: '2rem',
-                    background: 'white',
-                    borderRadius: '8px',
-                    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-                    maxWidth: '400px',
-                    margin: '0 auto'
-                }
-            }, [
-                React.createElement('h2', {key: 'title', style: {marginBottom: '1rem', textAlign: 'center'}}, 'Login Form'),
-                React.createElement('input', {key: 'email', type: 'email', placeholder: 'Email', style: {width: '100%', padding: '8px', marginBottom: '1rem', border: '1px solid #ddd', borderRadius: '4px'}}),
-                React.createElement('input', {key: 'password', type: 'password', placeholder: 'Password', style: {width: '100%', padding: '8px', marginBottom: '1rem', border: '1px solid #ddd', borderRadius: '4px'}}),
-                React.createElement('button', {key: 'submit', style: {width: '100%', padding: '12px', background: '#00A896', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer'}}, 'Login')
-            ]),
-            LoginForm: () => React.createElement('div', {
-                style: {
-                    padding: '2rem',
-                    background: 'white',
-                    borderRadius: '8px',
-                    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-                    maxWidth: '400px',
-                    margin: '0 auto'
-                }
-            }, [
-                React.createElement('h2', {key: 'title', style: {marginBottom: '1rem', textAlign: 'center'}}, 'Login Form'),
-                React.createElement('input', {key: 'email', type: 'email', placeholder: 'Email', style: {width: '100%', padding: '8px', marginBottom: '1rem', border: '1px solid #ddd', borderRadius: '4px'}}),
-                React.createElement('input', {key: 'password', type: 'password', placeholder: 'Password', style: {width: '100%', padding: '8px', marginBottom: '1rem', border: '1px solid #ddd', borderRadius: '4px'}}),
-                React.createElement('button', {key: 'submit', style: {width: '100%', padding: '12px', background: '#00A896', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer'}}, 'Login')
-            ]),
-            Hero: () => React.createElement('div', {
-                style: {
-                    background: 'linear-gradient(135deg, #00A896 0%, #008B8B 100%)',
-                    color: 'white',
-                    padding: '4rem 2rem',
-                    textAlign: 'center'
-                }
-            }, [
-                React.createElement('h1', {key: 'title', style: {fontSize: '2.5rem', marginBottom: '1rem', fontWeight: 'bold'}}, 'Welcome to PURE Broker Portal'),
-                React.createElement('p', {key: 'subtitle', style: {fontSize: '1.2rem', opacity: 0.9}}, 'Access our systems, tools, and resources for brokers')
-            ])
+            // Basic utility components only - everything else will be created dynamically
         };
 
         // Make mock components globally available
@@ -491,29 +451,39 @@ function generateAdvancedPreviewHTML(code, analysis) {
             // Check if it's a component not defined error
             if (event.error && event.error.message && event.error.message.includes('is not defined')) {
                 const componentName = event.error.message.match(/(\w+) is not defined/)?.[1];
+                console.log('Attempting to create mock component for:', componentName);
+                
                 if (componentName) {
                     // Create a dynamic mock component for any undefined component
                     const dynamicComponent = () => React.createElement('div', {
                         style: {
-                            padding: '1rem',
-                            border: '2px dashed #e5e7eb',
+                            padding: '2rem',
+                            border: '2px dashed #3b82f6',
                             borderRadius: '8px',
-                            background: '#f9fafb',
-                            color: '#6b7280',
+                            background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
+                            color: '#1e40af',
                             textAlign: 'center',
-                            margin: '1rem 0'
+                            margin: '1rem 0',
+                            boxShadow: '0 4px 6px rgba(59, 130, 246, 0.1)'
                         }
                     }, [
-                        React.createElement('h3', {key: 'title', style: {margin: '0 0 0.5rem 0', color: '#374151'}}, componentName + ' Component'),
-                        React.createElement('p', {key: 'desc', style: {margin: 0, fontSize: '0.875rem'}}, 'This is a mock component created automatically for preview purposes.')
+                        React.createElement('div', {key: 'icon', style: {fontSize: '2rem', marginBottom: '1rem'}}, '🔧'),
+                        React.createElement('h3', {key: 'title', style: {margin: '0 0 0.5rem 0', color: '#1e40af', fontSize: '1.25rem', fontWeight: 'bold'}}, componentName + ' Component'),
+                        React.createElement('p', {key: 'desc', style: {margin: '0 0 1rem 0', fontSize: '0.875rem', opacity: 0.8}}, 'Auto-generated mock component for live preview'),
+                        React.createElement('div', {key: 'info', style: {fontSize: '0.75rem', opacity: 0.6, background: 'rgba(59, 130, 246, 0.1)', padding: '0.5rem', borderRadius: '4px'}}, 'This component will be properly implemented in the generated code')
                     ]);
                     
                     // Add to mock components and make globally available
                     mockComponents[componentName] = dynamicComponent;
                     window[componentName] = dynamicComponent;
                     
-                    console.log(\`Auto-created mock component: ${componentName}\`);
-                    return; // Don't send error to parent
+                    console.log('Successfully created mock component:', componentName);
+                    console.log('Available components:', Object.keys(mockComponents));
+                    
+                    // Prevent the error from propagating
+                    event.preventDefault();
+                    event.stopPropagation();
+                    return false;
                 }
             }
             
