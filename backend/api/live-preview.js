@@ -429,7 +429,22 @@ function generateAdvancedPreviewHTML(code, analysis) {
             Span: ({children, ...props}) => React.createElement('span', props, children),
             Image: ({src, alt, ...props}) => React.createElement('img', {src, alt, style: {maxWidth: '100%', height: 'auto'}, ...props}),
             List: ({children, ...props}) => React.createElement('ul', {style: {margin: '0', padding: '0 0 0 1.5rem'}, ...props}, children),
-            ListItem: ({children, ...props}) => React.createElement('li', {style: {margin: '0.25rem 0'}, ...props}, children)
+            ListItem: ({children, ...props}) => React.createElement('li', {style: {margin: '0.25rem 0'}, ...props}, children),
+            Login: () => React.createElement('div', {
+                style: {
+                    padding: '2rem',
+                    background: 'white',
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+                    maxWidth: '400px',
+                    margin: '0 auto'
+                }
+            }, [
+                React.createElement('h2', {key: 'title', style: {marginBottom: '1rem', textAlign: 'center'}}, 'Login Form'),
+                React.createElement('input', {key: 'email', type: 'email', placeholder: 'Email', style: {width: '100%', padding: '8px', marginBottom: '1rem', border: '1px solid #ddd', borderRadius: '4px'}}),
+                React.createElement('input', {key: 'password', type: 'password', placeholder: 'Password', style: {width: '100%', padding: '8px', marginBottom: '1rem', border: '1px solid #ddd', borderRadius: '4px'}}),
+                React.createElement('button', {key: 'submit', style: {width: '100%', padding: '12px', background: '#00A896', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer'}}, 'Login')
+            ])
         };
 
         // Make mock components globally available
