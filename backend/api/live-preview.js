@@ -71,7 +71,11 @@ async function validateAndAnalyzeCode(code) {
     // Extract component name
     const componentName = extractComponentName(code);
     
-    // Basic analysis
+    // Enhanced analysis
+    const imports = extractImports(code);
+    const hooks = extractHooks(code);
+    const complexity = calculateComplexity(code);
+    
     const analysis = {
       componentName,
       componentType: detectComponentType(code),
@@ -80,7 +84,11 @@ async function validateAndAnalyzeCode(code) {
       hasProps: code.includes('props') || code.includes('{') && code.includes('}'),
       linesOfCode: code.split('\n').length,
       hasImports: code.includes('import'),
-      hasExports: code.includes('export')
+      hasExports: code.includes('export'),
+      imports: imports,
+      hooks: hooks,
+      complexity: complexity,
+      description: generateComponentDescription(code, componentName, hooks, imports)
     };
 
     return {
@@ -121,6 +129,66 @@ function detectComponentType(code) {
   return 'unknown';
 }
 
+function extractImports(code) {
+  const imports = [];
+  
+  // Extract import statements with more detail
+  const importRegex = /import\s+(.*?)\s+from\s+['"]([^'"]+)['"]/g;
+  let match;
+  while ((match = importRegex.exec(code)) !== null) {
+    const importNames = match[1].split(',').map(name => name.trim());
+    imports.push({
+      names: importNames,
+      source: match[2]
+    });
+  }
+  
+  return imports;
+}
+
+function extractHooks(code) {
+  const hooks = [];
+  const hookRegex = /use[A-Z][a-zA-Z]*/g;
+  let match;
+  while ((match = hookRegex.exec(code)) !== null) {
+    hooks.push(match[0]);
+  }
+  return [...new Set(hooks)];
+}
+
+function calculateComplexity(code) {
+  const lines = code.split('\n').length;
+  const hooks = extractHooks(code).length;
+  const imports = extractImports(code).length;
+  
+  if (lines > 100 || hooks > 5 || imports > 10) return 'high';
+  if (lines > 50 || hooks > 3 || imports > 5) return 'medium';
+  return 'low';
+}
+
+function generateComponentDescription(code, componentName, hooks, imports) {
+  const descriptions = [];
+  
+  if (hooks.length > 0) {
+    descriptions.push(`Uses ${hooks.join(', ')} hooks`);
+  }
+  
+  if (imports.length > 0) {
+    const importSources = imports.map(imp => imp.source).join(', ');
+    descriptions.push(`Imports from ${importSources}`);
+  }
+  
+  if (code.includes('className')) {
+    descriptions.push('Uses Tailwind CSS styling');
+  }
+  
+  if (code.includes('onClick') || code.includes('onSubmit')) {
+    descriptions.push('Has interactive elements');
+  }
+  
+  return descriptions.length > 0 ? descriptions.join('. ') : 'A React component';
+}
+
 function extractAllDependencies(code) {
   const dependencies = [];
   
@@ -147,7 +215,7 @@ function generateAdvancedPreviewHTML(code, analysis) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>\${componentName} - Live Preview</title>
+    <title>${componentName} - Live Preview</title>
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -385,7 +453,7 @@ function generateAdvancedPreviewHTML(code, analysis) {
                 if (componentName && mockComponents[componentName]) {
                     // Provide the missing component
                     window[componentName] = mockComponents[componentName];
-                    console.log(\`Auto-provided missing component: \${componentName}\`);
+                                            console.log(\`Auto-provided missing component: ${componentName}\`);
                     return; // Don't send error to parent
                 }
             }
@@ -468,7 +536,7 @@ function generateAdvancedPreviewHTML(code, analysis) {
                     if (window.parent) {
                         window.parent.postMessage({
                             type: 'PREVIEW_READY',
-                            componentName: '\${componentName}',
+                            componentName: '${componentName}',
                             timestamp: new Date().toISOString()
                         }, '*');
                     }
@@ -481,12 +549,12 @@ function generateAdvancedPreviewHTML(code, analysis) {
                 return (
                     <div className="loading">
                         <div className="loading-spinner"></div>
-                        <span>Initializing \${componentName}...</span>
+                        <span>Initializing ${componentName}...</span>
                     </div>
                 );
             }
 
-            const ComponentToRender = window.UserComponent || \${componentName};
+            const ComponentToRender = window.UserComponent || ${componentName};
             return <ComponentToRender />;
         };
         
