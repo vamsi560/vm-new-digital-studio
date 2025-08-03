@@ -504,9 +504,85 @@ function generateAdvancedPreviewHTML(code, analysis) {
         // Process the code to handle imports properly
         let processedCode = \`${code}\`;
         
+        // Extract component names from imports before removing them
+        const importMatches = processedCode.match(/import\\s+.*?from\\s+['"][^'"]+['"];?\\n?/g) || [];
+        const importedComponents = [];
+        
+        importMatches.forEach(importStatement => {
+            // Extract component names from import statements
+            const componentMatch = importStatement.match(/import\\s+{?([^}]+)}?\\s+from/);
+            if (componentMatch) {
+                const components = componentMatch[1].split(',').map(c => c.trim());
+                importedComponents.push(...components);
+            } else {
+                // Handle default imports
+                const defaultMatch = importStatement.match(/import\\s+([^\\s]+)\\s+from/);
+                if (defaultMatch) {
+                    importedComponents.push(defaultMatch[1]);
+                }
+            }
+        });
+        
+        // Create mock components for all imported components
+        importedComponents.forEach(componentName => {
+            if (!mockComponents[componentName]) {
+                const dynamicComponent = () => React.createElement('div', {
+                    style: {
+                        padding: '2rem',
+                        border: '2px dashed #3b82f6',
+                        borderRadius: '8px',
+                        background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
+                        color: '#1e40af',
+                        textAlign: 'center',
+                        margin: '1rem 0',
+                        boxShadow: '0 4px 6px rgba(59, 130, 246, 0.1)'
+                    }
+                }, [
+                    React.createElement('div', {key: 'icon', style: {fontSize: '2rem', marginBottom: '1rem'}}, '🔧'),
+                    React.createElement('h3', {key: 'title', style: {margin: '0 0 0.5rem 0', color: '#1e40af', fontSize: '1.25rem', fontWeight: 'bold'}}, componentName + ' Component'),
+                    React.createElement('p', {key: 'desc', style: {margin: '0 0 1rem 0', fontSize: '0.875rem', opacity: 0.8}}, 'Auto-generated mock component for live preview'),
+                    React.createElement('div', {key: 'info', style: {fontSize: '0.75rem', opacity: 0.6, background: 'rgba(59, 130, 246, 0.1)', padding: '0.5rem', borderRadius: '4px'}}, 'This component will be properly implemented in the generated code')
+                ]);
+                
+                mockComponents[componentName] = dynamicComponent;
+                window[componentName] = dynamicComponent;
+                console.log('Pre-created mock component for import:', componentName);
+            }
+        });
+        
         // Remove import statements from the code since they're not needed in this context
         // React and ReactDOM are already available globally
         processedCode = processedCode.replace(/import\\s+.*?from\\s+['"][^'"]+['"];?\\n?/g, '');
+        
+        // Scan for component usage in JSX and create mock components proactively
+        const jsxComponentMatches = processedCode.match(/<([A-Z][a-zA-Z0-9]*)\\b/g) || [];
+        const usedComponents = [...new Set(jsxComponentMatches.map(match => match.slice(1)))];
+        
+        usedComponents.forEach(componentName => {
+            if (!mockComponents[componentName] && componentName !== 'div' && componentName !== 'span' && componentName !== 'p' && componentName !== 'h1' && componentName !== 'h2' && componentName !== 'h3' && componentName !== 'button' && componentName !== 'input' && componentName !== 'img' && componentName !== 'a' && componentName !== 'ul' && componentName !== 'li') {
+                const dynamicComponent = () => React.createElement('div', {
+                    style: {
+                        padding: '2rem',
+                        border: '2px dashed #3b82f6',
+                        borderRadius: '8px',
+                        background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
+                        color: '#1e40af',
+                        textAlign: 'center',
+                        margin: '1rem 0',
+                        boxShadow: '0 4px 6px rgba(59, 130, 246, 0.1)'
+                    }
+                }, [
+                    React.createElement('div', {key: 'icon', style: {fontSize: '2rem', marginBottom: '1rem'}}, '🔧'),
+                    React.createElement('h3', {key: 'title', style: {margin: '0 0 0.5rem 0', color: '#1e40af', fontSize: '1.25rem', fontWeight: 'bold'}}, componentName + ' Component'),
+                    React.createElement('p', {key: 'desc', style: {margin: '0 0 1rem 0', fontSize: '0.875rem', opacity: 0.8}}, 'Auto-generated mock component for live preview'),
+                    React.createElement('div', {key: 'info', style: {fontSize: '0.75rem', opacity: 0.6, background: 'rgba(59, 130, 246, 0.1)', padding: '0.5rem', borderRadius: '4px'}}, 'This component will be properly implemented in the generated code')
+                ]);
+                
+                mockComponents[componentName] = dynamicComponent;
+                window[componentName] = dynamicComponent;
+                console.log('Pre-created mock component for JSX usage:', componentName);
+            }
+        });
         
         // Remove TypeScript type annotations (function return types, parameter types, interfaces, types)
         processedCode = processedCode
