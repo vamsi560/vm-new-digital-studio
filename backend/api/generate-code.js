@@ -21,7 +21,7 @@ function generateComponentPreview(componentCode, componentName) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>\${componentName} Preview</title>
+    <title>${componentName} Preview</title>
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -63,7 +63,7 @@ function generateComponentPreview(componentCode, componentName) {
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(
             <ErrorBoundary>
-                <\${componentName} />
+                <${componentName} />
             </ErrorBoundary>
         );
     </script>
@@ -274,40 +274,42 @@ module.exports = {
     function generateAppJsx(screenNames, screenFolder = 'components', ext = 'jsx') {
       if (screenNames.length === 1) {
         // Single screen/component
-        return `import React from 'react';
-import ${screenNames[0]} from './${screenFolder}/${screenNames[0]}';
-
-export default function App() {
-  return <${screenNames[0]} />;
-}`;
+        return 'import React from \'react\';\n' +
+               'import ' + screenNames[0] + ' from \'./' + screenFolder + '/' + screenNames[0] + '\';\n\n' +
+               'export default function App() {\n' +
+               '  return <' + screenNames[0] + ' />;\n' +
+               '}';
       } else if (screenNames.length > 1) {
         // Multiple screens/components: use React Router
-        return `import React from 'react';
-import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
-${screenNames.map(name => `import ${name} from './${screenFolder}/${name}';`).join('\n')}
-
-export default function App() {
-  return (
-    <BrowserRouter>
-      <nav style={{ padding: 16, marginBottom: 24 }}>
-        ${screenNames.map(name => {
+        const imports = screenNames.map(name => 'import ' + name + ' from \'./' + screenFolder + '/' + name + '\';').join('\n');
+        const navLinks = screenNames.map(name => {
           const label = name.replace(/Screen$/, '').replace(/([A-Z])/g, ' $1').trim();
-          return `<Link key=\"${name}\" to=\"/${name}\"><button style={{marginRight: 8}}>${label}</button></Link>`;
-        }).join(' ')}
-      </nav>
-      <Routes>
-        ${screenNames.map(name => `<Route path=\"/${name}\" element={<${name} />} />`).join(' ')}
-        <Route path=\"*\" element={<${screenNames[0]} />} />
-      </Routes>
-    </BrowserRouter>
-  );
-}`;
+          return '<Link key="' + name + '" to="/' + name + '"><button style={{marginRight: 8}}>' + label + '</button></Link>';
+        }).join(' ');
+        const routes = screenNames.map(name => '<Route path="/' + name + '" element={<' + name + ' />} />').join(' ');
+        
+        return 'import React from \'react\';\n' +
+               'import { BrowserRouter, Routes, Route, Link } from \'react-router-dom\';\n' +
+               imports + '\n\n' +
+               'export default function App() {\n' +
+               '  return (\n' +
+               '    <BrowserRouter>\n' +
+               '      <nav style={{ padding: 16, marginBottom: 24 }}>\n' +
+               '        ' + navLinks + '\n' +
+               '      </nav>\n' +
+               '      <Routes>\n' +
+               '        ' + routes + '\n' +
+               '        <Route path="*" element={<' + screenNames[0] + ' />} />\n' +
+               '      </Routes>\n' +
+               '    </BrowserRouter>\n' +
+               '  );\n' +
+               '}';
       } else {
         // Fallback: no screens
-        return `import React from 'react';
-export default function App() {
-  return <div>No screens found.</div>;
-}`;
+        return 'import React from \'react\';\n' +
+               'export default function App() {\n' +
+               '  return <div>No screens found.</div>;\n' +
+               '}';
       }
     }
 
@@ -328,7 +330,7 @@ export default function App() {
     if (!generatedFiles['src/App.jsx'] && !generatedFiles['src/App.tsx']) {
       // Use .tsx if any screen/component is .tsx, else .jsx
       const ext = screenFiles.some(f => f.endsWith('.tsx')) ? 'tsx' : 'jsx';
-      generatedFiles[`src/App.${ext}`] = generateAppJsx(screenNames, screenFolder, ext);
+      generatedFiles['src/App.' + ext] = generateAppJsx(screenNames, screenFolder, ext);
     }
 
     // --- Ensure react-router-dom in package.json if needed ---
