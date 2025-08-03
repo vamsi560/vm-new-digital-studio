@@ -444,6 +444,32 @@ function generateAdvancedPreviewHTML(code, analysis) {
                 React.createElement('input', {key: 'email', type: 'email', placeholder: 'Email', style: {width: '100%', padding: '8px', marginBottom: '1rem', border: '1px solid #ddd', borderRadius: '4px'}}),
                 React.createElement('input', {key: 'password', type: 'password', placeholder: 'Password', style: {width: '100%', padding: '8px', marginBottom: '1rem', border: '1px solid #ddd', borderRadius: '4px'}}),
                 React.createElement('button', {key: 'submit', style: {width: '100%', padding: '12px', background: '#00A896', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer'}}, 'Login')
+            ]),
+            LoginForm: () => React.createElement('div', {
+                style: {
+                    padding: '2rem',
+                    background: 'white',
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+                    maxWidth: '400px',
+                    margin: '0 auto'
+                }
+            }, [
+                React.createElement('h2', {key: 'title', style: {marginBottom: '1rem', textAlign: 'center'}}, 'Login Form'),
+                React.createElement('input', {key: 'email', type: 'email', placeholder: 'Email', style: {width: '100%', padding: '8px', marginBottom: '1rem', border: '1px solid #ddd', borderRadius: '4px'}}),
+                React.createElement('input', {key: 'password', type: 'password', placeholder: 'Password', style: {width: '100%', padding: '8px', marginBottom: '1rem', border: '1px solid #ddd', borderRadius: '4px'}}),
+                React.createElement('button', {key: 'submit', style: {width: '100%', padding: '12px', background: '#00A896', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer'}}, 'Login')
+            ]),
+            Hero: () => React.createElement('div', {
+                style: {
+                    background: 'linear-gradient(135deg, #00A896 0%, #008B8B 100%)',
+                    color: 'white',
+                    padding: '4rem 2rem',
+                    textAlign: 'center'
+                }
+            }, [
+                React.createElement('h1', {key: 'title', style: {fontSize: '2.5rem', marginBottom: '1rem', fontWeight: 'bold'}}, 'Welcome to PURE Broker Portal'),
+                React.createElement('p', {key: 'subtitle', style: {fontSize: '1.2rem', opacity: 0.9}}, 'Access our systems, tools, and resources for brokers')
             ])
         };
 
@@ -458,17 +484,35 @@ function generateAdvancedPreviewHTML(code, analysis) {
         // Create a global components object for easier access
         window.Components = mockComponents;
 
-        // Enhanced global error handler with component fallbacks
+        // Enhanced global error handler with dynamic component creation
         window.addEventListener('error', (event) => {
             console.error('Global error:', event.error);
             
             // Check if it's a component not defined error
             if (event.error && event.error.message && event.error.message.includes('is not defined')) {
                 const componentName = event.error.message.match(/(\w+) is not defined/)?.[1];
-                if (componentName && mockComponents[componentName]) {
-                    // Provide the missing component
-                    window[componentName] = mockComponents[componentName];
-                                            console.log(\`Auto-provided missing component: ${componentName}\`);
+                if (componentName) {
+                    // Create a dynamic mock component for any undefined component
+                    const dynamicComponent = () => React.createElement('div', {
+                        style: {
+                            padding: '1rem',
+                            border: '2px dashed #e5e7eb',
+                            borderRadius: '8px',
+                            background: '#f9fafb',
+                            color: '#6b7280',
+                            textAlign: 'center',
+                            margin: '1rem 0'
+                        }
+                    }, [
+                        React.createElement('h3', {key: 'title', style: {margin: '0 0 0.5rem 0', color: '#374151'}}, componentName + ' Component'),
+                        React.createElement('p', {key: 'desc', style: {margin: 0, fontSize: '0.875rem'}}, 'This is a mock component created automatically for preview purposes.')
+                    ]);
+                    
+                    // Add to mock components and make globally available
+                    mockComponents[componentName] = dynamicComponent;
+                    window[componentName] = dynamicComponent;
+                    
+                    console.log(\`Auto-created mock component: ${componentName}\`);
                     return; // Don't send error to parent
                 }
             }
