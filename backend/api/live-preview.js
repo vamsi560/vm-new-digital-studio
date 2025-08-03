@@ -473,7 +473,7 @@ function generateAdvancedPreviewHTML(code, analysis) {
 
         // User's component code (with error handling)
         // Process the code to handle imports properly
-        let processedCode = \`\${code}\`;
+        let processedCode = \`${code}\`;
         
         // Remove import statements from the code since they're not needed in this context
         // React and ReactDOM are already available globally
