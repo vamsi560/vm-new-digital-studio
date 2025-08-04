@@ -676,38 +676,22 @@ function generateAdvancedPreviewHTML(code, analysis) {
         // Render the component
         const root = ReactDOM.createRoot(document.getElementById('root'));
         
+        // Simple wrapper without hooks to avoid React.useState issues
         const PreviewWrapper = () => {
-            const [isReady, setIsReady] = React.useState(false);
-            
-            React.useEffect(() => {
-                // Small delay to ensure everything is loaded
-                const timer = setTimeout(() => {
-                    setIsReady(true);
-                    // Notify parent that preview is ready
-                    if (window.parent) {
-                        window.parent.postMessage({
-                            type: 'PREVIEW_READY',
-                            componentName: '${componentName}',
-                            timestamp: new Date().toISOString()
-                        }, '*');
-                    }
-                }, 100);
-                
-                return () => clearTimeout(timer);
-            }, []);
-
-            if (!isReady) {
-                return (
-                    <div className="loading">
-                        <div className="loading-spinner"></div>
-                        <span>Initializing ${componentName}...</span>
-                    </div>
-                );
-            }
-
             const ComponentToRender = window.UserComponent || ${componentName};
             return <ComponentToRender />;
         };
+        
+        // Notify parent that preview is ready after a small delay
+        setTimeout(() => {
+            if (window.parent) {
+                window.parent.postMessage({
+                    type: 'PREVIEW_READY',
+                    componentName: '${componentName}',
+                    timestamp: new Date().toISOString()
+                }, '*');
+            }
+        }, 100);
         
         try {
             root.render(
