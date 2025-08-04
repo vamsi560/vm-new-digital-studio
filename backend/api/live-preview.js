@@ -399,37 +399,52 @@ function generateAdvancedPreviewHTML(code, analysis) {
             }
         }
 
+        // Ensure React is available
+        if (typeof React === 'undefined') {
+            console.error('React is not available');
+            throw new Error('React is not loaded');
+        }
+
         // Mock common React libraries for preview
         const mockLibraries = {
             'react-router-dom': {
-                BrowserRouter: ({children}) => React.createElement('div', {}, children),
-                Route: ({children}) => React.createElement('div', {}, children),
-                Link: ({children, to, ...props}) => React.createElement('a', {href: to, ...props}, children),
+                BrowserRouter: ({children}) => createElement('div', {}, children),
+                Route: ({children}) => createElement('div', {}, children),
+                Link: ({children, to, ...props}) => createElement('a', {href: to, ...props}, children),
                 useNavigate: () => (path) => console.log('Navigate to:', path),
                 useParams: () => ({}),
                 useLocation: () => ({pathname: '/', search: '', hash: ''})
             }
         };
 
+        // Helper function to safely create React elements
+        const createElement = (type, props, ...children) => {
+            if (typeof React === 'undefined') {
+                console.error('React is not available for createElement');
+                return null;
+            }
+            return React.createElement(type, props, ...children);
+        };
+
         // Mock common components that might be missing
         const mockComponents = {
-            Header: () => React.createElement('header', {style: {padding: '1rem', background: '#f3f4f6'}}, 'Header Component'),
-            Footer: () => React.createElement('footer', {style: {padding: '1rem', background: '#f3f4f6'}}, 'Footer Component'),
-            Sidebar: () => React.createElement('aside', {style: {padding: '1rem', background: '#e5e7eb'}}, 'Sidebar Component'),
-            Navigation: () => React.createElement('nav', {style: {padding: '1rem', background: '#d1d5db'}}, 'Navigation Component'),
-            Layout: ({children}) => React.createElement('div', {style: {display: 'flex', flexDirection: 'column', minHeight: '100vh'}}, children),
-            Container: ({children}) => React.createElement('div', {style: {maxWidth: '1200px', margin: '0 auto', padding: '0 1rem'}}, children),
-            Button: ({children, ...props}) => React.createElement('button', {style: {padding: '8px 16px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer'}, ...props}, children),
-            Card: ({children, ...props}) => React.createElement('div', {style: {padding: '1rem', border: '1px solid #e5e7eb', borderRadius: '8px', background: 'white'}, ...props}, children),
-            Input: ({...props}) => React.createElement('input', {style: {padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: '4px', width: '100%'}, ...props}),
-            Text: ({children, ...props}) => React.createElement('p', {style: {margin: '0'}, ...props}, children),
-            Title: ({children, ...props}) => React.createElement('h1', {style: {margin: '0 0 1rem 0', fontSize: '1.5rem', fontWeight: 'bold'}, ...props}, children),
-            Subtitle: ({children, ...props}) => React.createElement('h2', {style: {margin: '0 0 0.5rem 0', fontSize: '1.25rem', fontWeight: '600'}, ...props}, children),
-            Div: ({children, ...props}) => React.createElement('div', props, children),
-            Span: ({children, ...props}) => React.createElement('span', props, children),
-            Image: ({src, alt, ...props}) => React.createElement('img', {src, alt, style: {maxWidth: '100%', height: 'auto'}, ...props}),
-            List: ({children, ...props}) => React.createElement('ul', {style: {margin: '0', padding: '0 0 0 1.5rem'}, ...props}, children),
-            ListItem: ({children, ...props}) => React.createElement('li', {style: {margin: '0.25rem 0'}, ...props}, children),
+            Header: () => createElement('header', {style: {padding: '1rem', background: '#f3f4f6'}}, 'Header Component'),
+            Footer: () => createElement('footer', {style: {padding: '1rem', background: '#f3f4f6'}}, 'Footer Component'),
+            Sidebar: () => createElement('aside', {style: {padding: '1rem', background: '#e5e7eb'}}, 'Sidebar Component'),
+            Navigation: () => createElement('nav', {style: {padding: '1rem', background: '#d1d5db'}}, 'Navigation Component'),
+            Layout: ({children}) => createElement('div', {style: {display: 'flex', flexDirection: 'column', minHeight: '100vh'}}, children),
+            Container: ({children}) => createElement('div', {style: {maxWidth: '1200px', margin: '0 auto', padding: '0 1rem'}}, children),
+            Button: ({children, ...props}) => createElement('button', {style: {padding: '8px 16px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer'}, ...props}, children),
+            Card: ({children, ...props}) => createElement('div', {style: {padding: '1rem', border: '1px solid #e5e7eb', borderRadius: '8px', background: 'white'}, ...props}, children),
+            Input: ({...props}) => createElement('input', {style: {padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: '4px', width: '100%'}, ...props}),
+            Text: ({children, ...props}) => createElement('p', {style: {margin: '0'}, ...props}, children),
+            Title: ({children, ...props}) => createElement('h1', {style: {margin: '0 0 1rem 0', fontSize: '1.5rem', fontWeight: 'bold'}, ...props}, children),
+            Subtitle: ({children, ...props}) => createElement('h2', {style: {margin: '0 0 0.5rem 0', fontSize: '1.25rem', fontWeight: '600'}, ...props}, children),
+            Div: ({children, ...props}) => createElement('div', props, children),
+            Span: ({children, ...props}) => createElement('span', props, children),
+            Image: ({src, alt, ...props}) => createElement('img', {src, alt, style: {maxWidth: '100%', height: 'auto'}, ...props}),
+            List: ({children, ...props}) => createElement('ul', {style: {margin: '0', padding: '0 0 0 1.5rem'}, ...props}, children),
+            ListItem: ({children, ...props}) => createElement('li', {style: {margin: '0.25rem 0'}, ...props}, children),
             // Basic utility components only - everything else will be created dynamically
         };
 
@@ -455,7 +470,7 @@ function generateAdvancedPreviewHTML(code, analysis) {
                 
                 if (componentName) {
                     // Create a dynamic mock component for any undefined component
-                    const dynamicComponent = () => React.createElement('div', {
+                    const dynamicComponent = () => createElement('div', {
                         style: {
                             padding: '2rem',
                             border: '2px dashed #3b82f6',
@@ -467,10 +482,10 @@ function generateAdvancedPreviewHTML(code, analysis) {
                             boxShadow: '0 4px 6px rgba(59, 130, 246, 0.1)'
                         }
                     }, [
-                        React.createElement('div', {key: 'icon', style: {fontSize: '2rem', marginBottom: '1rem'}}, '🔧'),
-                        React.createElement('h3', {key: 'title', style: {margin: '0 0 0.5rem 0', color: '#1e40af', fontSize: '1.25rem', fontWeight: 'bold'}}, componentName + ' Component'),
-                        React.createElement('p', {key: 'desc', style: {margin: '0 0 1rem 0', fontSize: '0.875rem', opacity: 0.8}}, 'Auto-generated mock component for live preview'),
-                        React.createElement('div', {key: 'info', style: {fontSize: '0.75rem', opacity: 0.6, background: 'rgba(59, 130, 246, 0.1)', padding: '0.5rem', borderRadius: '4px'}}, 'This component will be properly implemented in the generated code')
+                        createElement('div', {key: 'icon', style: {fontSize: '2rem', marginBottom: '1rem'}}, '🔧'),
+                        createElement('h3', {key: 'title', style: {margin: '0 0 0.5rem 0', color: '#1e40af', fontSize: '1.25rem', fontWeight: 'bold'}}, componentName + ' Component'),
+                        createElement('p', {key: 'desc', style: {margin: '0 0 1rem 0', fontSize: '0.875rem', opacity: 0.8}}, 'Auto-generated mock component for live preview'),
+                        createElement('div', {key: 'info', style: {fontSize: '0.75rem', opacity: 0.6, background: 'rgba(59, 130, 246, 0.1)', padding: '0.5rem', borderRadius: '4px'}}, 'This component will be properly implemented in the generated code')
                     ]);
                     
                     // Add to mock components and make globally available
@@ -526,7 +541,7 @@ function generateAdvancedPreviewHTML(code, analysis) {
         // Create mock components for all imported components
         importedComponents.forEach(componentName => {
             if (!mockComponents[componentName]) {
-                const dynamicComponent = () => React.createElement('div', {
+                const dynamicComponent = () => createElement('div', {
                     style: {
                         padding: '2rem',
                         border: '2px dashed #3b82f6',
@@ -538,10 +553,10 @@ function generateAdvancedPreviewHTML(code, analysis) {
                         boxShadow: '0 4px 6px rgba(59, 130, 246, 0.1)'
                     }
                 }, [
-                    React.createElement('div', {key: 'icon', style: {fontSize: '2rem', marginBottom: '1rem'}}, '🔧'),
-                    React.createElement('h3', {key: 'title', style: {margin: '0 0 0.5rem 0', color: '#1e40af', fontSize: '1.25rem', fontWeight: 'bold'}}, componentName + ' Component'),
-                    React.createElement('p', {key: 'desc', style: {margin: '0 0 1rem 0', fontSize: '0.875rem', opacity: 0.8}}, 'Auto-generated mock component for live preview'),
-                    React.createElement('div', {key: 'info', style: {fontSize: '0.75rem', opacity: 0.6, background: 'rgba(59, 130, 246, 0.1)', padding: '0.5rem', borderRadius: '4px'}}, 'This component will be properly implemented in the generated code')
+                    createElement('div', {key: 'icon', style: {fontSize: '2rem', marginBottom: '1rem'}}, '🔧'),
+                    createElement('h3', {key: 'title', style: {margin: '0 0 0.5rem 0', color: '#1e40af', fontSize: '1.25rem', fontWeight: 'bold'}}, componentName + ' Component'),
+                    createElement('p', {key: 'desc', style: {margin: '0 0 1rem 0', fontSize: '0.875rem', opacity: 0.8}}, 'Auto-generated mock component for live preview'),
+                    createElement('div', {key: 'info', style: {fontSize: '0.75rem', opacity: 0.6, background: 'rgba(59, 130, 246, 0.1)', padding: '0.5rem', borderRadius: '4px'}}, 'This component will be properly implemented in the generated code')
                 ]);
                 
                 mockComponents[componentName] = dynamicComponent;
@@ -560,7 +575,7 @@ function generateAdvancedPreviewHTML(code, analysis) {
         
         usedComponents.forEach(componentName => {
             if (!mockComponents[componentName] && componentName !== 'div' && componentName !== 'span' && componentName !== 'p' && componentName !== 'h1' && componentName !== 'h2' && componentName !== 'h3' && componentName !== 'button' && componentName !== 'input' && componentName !== 'img' && componentName !== 'a' && componentName !== 'ul' && componentName !== 'li') {
-                const dynamicComponent = () => React.createElement('div', {
+                const dynamicComponent = () => createElement('div', {
                     style: {
                         padding: '2rem',
                         border: '2px dashed #3b82f6',
@@ -572,10 +587,10 @@ function generateAdvancedPreviewHTML(code, analysis) {
                         boxShadow: '0 4px 6px rgba(59, 130, 246, 0.1)'
                     }
                 }, [
-                    React.createElement('div', {key: 'icon', style: {fontSize: '2rem', marginBottom: '1rem'}}, '🔧'),
-                    React.createElement('h3', {key: 'title', style: {margin: '0 0 0.5rem 0', color: '#1e40af', fontSize: '1.25rem', fontWeight: 'bold'}}, componentName + ' Component'),
-                    React.createElement('p', {key: 'desc', style: {margin: '0 0 1rem 0', fontSize: '0.875rem', opacity: 0.8}}, 'Auto-generated mock component for live preview'),
-                    React.createElement('div', {key: 'info', style: {fontSize: '0.75rem', opacity: 0.6, background: 'rgba(59, 130, 246, 0.1)', padding: '0.5rem', borderRadius: '4px'}}, 'This component will be properly implemented in the generated code')
+                    createElement('div', {key: 'icon', style: {fontSize: '2rem', marginBottom: '1rem'}}, '🔧'),
+                    createElement('h3', {key: 'title', style: {margin: '0 0 0.5rem 0', color: '#1e40af', fontSize: '1.25rem', fontWeight: 'bold'}}, componentName + ' Component'),
+                    createElement('p', {key: 'desc', style: {margin: '0 0 1rem 0', fontSize: '0.875rem', opacity: 0.8}}, 'Auto-generated mock component for live preview'),
+                    createElement('div', {key: 'info', style: {fontSize: '0.75rem', opacity: 0.6, background: 'rgba(59, 130, 246, 0.1)', padding: '0.5rem', borderRadius: '4px'}}, 'This component will be properly implemented in the generated code')
                 ]);
                 
                 mockComponents[componentName] = dynamicComponent;
