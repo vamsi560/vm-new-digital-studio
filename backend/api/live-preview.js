@@ -399,11 +399,32 @@ function generateAdvancedPreviewHTML(code, analysis) {
             }
         }
 
-        // Ensure React is available
-        if (typeof React === 'undefined') {
-            console.error('React is not available');
-            throw new Error('React is not loaded');
-        }
+        // Helper function to safely create React elements
+        const createElement = (type, props, ...children) => {
+            if (typeof React === 'undefined') {
+                console.error('React is not available for createElement');
+                return null;
+            }
+            return React.createElement(type, props, ...children);
+        };
+
+        // Wait for React to be available before creating components
+        const waitForReact = () => {
+            return new Promise((resolve) => {
+                if (typeof React !== 'undefined') {
+                    resolve();
+                } else {
+                    const checkReact = () => {
+                        if (typeof React !== 'undefined') {
+                            resolve();
+                        } else {
+                            setTimeout(checkReact, 10);
+                        }
+                    };
+                    checkReact();
+                }
+            });
+        };
 
         // Mock common React libraries for preview
         const mockLibraries = {
@@ -417,50 +438,48 @@ function generateAdvancedPreviewHTML(code, analysis) {
             }
         };
 
-        // Helper function to safely create React elements
-        const createElement = (type, props, ...children) => {
-            if (typeof React === 'undefined') {
-                console.error('React is not available for createElement');
-                return null;
-            }
-            return React.createElement(type, props, ...children);
-        };
+        // Initialize components after React is loaded
+        const initializeComponents = async () => {
+            await waitForReact();
+            
+            // Mock common components that might be missing
+            const mockComponents = {
+                Header: () => createElement('header', {style: {padding: '1rem', background: '#f3f4f6'}}, 'Header Component'),
+                Footer: () => createElement('footer', {style: {padding: '1rem', background: '#f3f4f6'}}, 'Footer Component'),
+                Sidebar: () => createElement('aside', {style: {padding: '1rem', background: '#e5e7eb'}}, 'Sidebar Component'),
+                Navigation: () => createElement('nav', {style: {padding: '1rem', background: '#d1d5db'}}, 'Navigation Component'),
+                Layout: ({children}) => createElement('div', {style: {display: 'flex', flexDirection: 'column', minHeight: '100vh'}}, children),
+                Container: ({children}) => createElement('div', {style: {maxWidth: '1200px', margin: '0 auto', padding: '0 1rem'}}, children),
+                Button: ({children, ...props}) => createElement('button', {style: {padding: '8px 16px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer'}, ...props}, children),
+                Card: ({children, ...props}) => createElement('div', {style: {padding: '1rem', border: '1px solid #e5e7eb', borderRadius: '8px', background: 'white'}, ...props}, children),
+                Input: ({...props}) => createElement('input', {style: {padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: '4px', width: '100%'}, ...props}),
+                Text: ({children, ...props}) => createElement('p', {style: {margin: '0'}, ...props}, children),
+                Title: ({children, ...props}) => createElement('h1', {style: {margin: '0 0 1rem 0', fontSize: '1.5rem', fontWeight: 'bold'}, ...props}, children),
+                Subtitle: ({children, ...props}) => createElement('h2', {style: {margin: '0 0 0.5rem 0', fontSize: '1.25rem', fontWeight: '600'}, ...props}, children),
+                Div: ({children, ...props}) => createElement('div', props, children),
+                Span: ({children, ...props}) => createElement('span', props, children),
+                Image: ({src, alt, ...props}) => createElement('img', {src, alt, style: {maxWidth: '100%', height: 'auto'}, ...props}),
+                List: ({children, ...props}) => createElement('ul', {style: {margin: '0', padding: '0 0 0 1.5rem'}, ...props}, children),
+                ListItem: ({children, ...props}) => createElement('li', {style: {margin: '0.25rem 0'}, ...props}, children),
+                            // Basic utility components only - everything else will be created dynamically
+            };
 
-        // Mock common components that might be missing
-        const mockComponents = {
-            Header: () => createElement('header', {style: {padding: '1rem', background: '#f3f4f6'}}, 'Header Component'),
-            Footer: () => createElement('footer', {style: {padding: '1rem', background: '#f3f4f6'}}, 'Footer Component'),
-            Sidebar: () => createElement('aside', {style: {padding: '1rem', background: '#e5e7eb'}}, 'Sidebar Component'),
-            Navigation: () => createElement('nav', {style: {padding: '1rem', background: '#d1d5db'}}, 'Navigation Component'),
-            Layout: ({children}) => createElement('div', {style: {display: 'flex', flexDirection: 'column', minHeight: '100vh'}}, children),
-            Container: ({children}) => createElement('div', {style: {maxWidth: '1200px', margin: '0 auto', padding: '0 1rem'}}, children),
-            Button: ({children, ...props}) => createElement('button', {style: {padding: '8px 16px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer'}, ...props}, children),
-            Card: ({children, ...props}) => createElement('div', {style: {padding: '1rem', border: '1px solid #e5e7eb', borderRadius: '8px', background: 'white'}, ...props}, children),
-            Input: ({...props}) => createElement('input', {style: {padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: '4px', width: '100%'}, ...props}),
-            Text: ({children, ...props}) => createElement('p', {style: {margin: '0'}, ...props}, children),
-            Title: ({children, ...props}) => createElement('h1', {style: {margin: '0 0 1rem 0', fontSize: '1.5rem', fontWeight: 'bold'}, ...props}, children),
-            Subtitle: ({children, ...props}) => createElement('h2', {style: {margin: '0 0 0.5rem 0', fontSize: '1.25rem', fontWeight: '600'}, ...props}, children),
-            Div: ({children, ...props}) => createElement('div', props, children),
-            Span: ({children, ...props}) => createElement('span', props, children),
-            Image: ({src, alt, ...props}) => createElement('img', {src, alt, style: {maxWidth: '100%', height: 'auto'}, ...props}),
-            List: ({children, ...props}) => createElement('ul', {style: {margin: '0', padding: '0 0 0 1.5rem'}, ...props}, children),
-            ListItem: ({children, ...props}) => createElement('li', {style: {margin: '0.25rem 0'}, ...props}, children),
-            // Basic utility components only - everything else will be created dynamically
+            // Make mock components globally available
+            Object.assign(window, mockComponents);
+            
+            // Also make them available as global variables
+            Object.keys(mockComponents).forEach(key => {
+                window[key] = mockComponents[key];
+            });
+            
+            // Create a global components object for easier access
+            window.Components = mockComponents;
+            
+            return mockComponents;
         };
-
-        // Make mock components globally available
-        Object.assign(window, mockComponents);
-        
-        // Also make them available as global variables
-        Object.keys(mockComponents).forEach(key => {
-            window[key] = mockComponents[key];
-        });
-        
-        // Create a global components object for easier access
-        window.Components = mockComponents;
 
         // Enhanced global error handler with dynamic component creation
-        window.addEventListener('error', (event) => {
+        window.addEventListener('error', async (event) => {
             console.error('Global error:', event.error);
             
             // Check if it's a component not defined error
@@ -469,6 +488,9 @@ function generateAdvancedPreviewHTML(code, analysis) {
                 console.log('Attempting to create mock component for:', componentName);
                 
                 if (componentName) {
+                    // Wait for React to be available
+                    await waitForReact();
+                    
                     // Create a dynamic mock component for any undefined component
                     const dynamicComponent = () => createElement('div', {
                         style: {
@@ -489,11 +511,14 @@ function generateAdvancedPreviewHTML(code, analysis) {
                     ]);
                     
                     // Add to mock components and make globally available
-                    mockComponents[componentName] = dynamicComponent;
+                    if (!window.mockComponents) {
+                        window.mockComponents = {};
+                    }
+                    window.mockComponents[componentName] = dynamicComponent;
                     window[componentName] = dynamicComponent;
                     
                     console.log('Successfully created mock component:', componentName);
-                    console.log('Available components:', Object.keys(mockComponents));
+                    console.log('Available components:', Object.keys(window.mockComponents));
                     
                     // Prevent the error from propagating
                     event.preventDefault();
@@ -515,132 +540,138 @@ function generateAdvancedPreviewHTML(code, analysis) {
             }
         });
 
-        // User's component code (with error handling)
-        // Process the code to handle imports properly
-        let processedCode = \`${code}\`;
-        
-        // Extract component names from imports before removing them
-        const importMatches = processedCode.match(/import\\s+.*?from\\s+['"][^'"]+['"];?\\n?/g) || [];
-        const importedComponents = [];
-        
-        importMatches.forEach(importStatement => {
-            // Extract component names from import statements
-            const componentMatch = importStatement.match(/import\\s+{?([^}]+)}?\\s+from/);
-            if (componentMatch) {
-                const components = componentMatch[1].split(',').map(c => c.trim());
-                importedComponents.push(...components);
-            } else {
-                // Handle default imports
-                const defaultMatch = importStatement.match(/import\\s+([^\\s]+)\\s+from/);
-                if (defaultMatch) {
-                    importedComponents.push(defaultMatch[1]);
+        // Initialize components and process user code
+        (async () => {
+            // Initialize base components
+            const mockComponents = await initializeComponents();
+            
+            // User's component code (with error handling)
+            // Process the code to handle imports properly
+            let processedCode = \`${code}\`;
+            
+            // Extract component names from imports before removing them
+            const importMatches = processedCode.match(/import\\s+.*?from\\s+['"][^'"]+['"];?\\n?/g) || [];
+            const importedComponents = [];
+            
+            importMatches.forEach(importStatement => {
+                // Extract component names from import statements
+                const componentMatch = importStatement.match(/import\\s+{?([^}]+)}?\\s+from/);
+                if (componentMatch) {
+                    const components = componentMatch[1].split(',').map(c => c.trim());
+                    importedComponents.push(...components);
+                } else {
+                    // Handle default imports
+                    const defaultMatch = importStatement.match(/import\\s+([^\\s]+)\\s+from/);
+                    if (defaultMatch) {
+                        importedComponents.push(defaultMatch[1]);
+                    }
                 }
-            }
-        });
-        
-        // Create mock components for all imported components
-        importedComponents.forEach(componentName => {
-            if (!mockComponents[componentName]) {
-                const dynamicComponent = () => createElement('div', {
-                    style: {
-                        padding: '2rem',
-                        border: '2px dashed #3b82f6',
-                        borderRadius: '8px',
-                        background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
-                        color: '#1e40af',
-                        textAlign: 'center',
-                        margin: '1rem 0',
-                        boxShadow: '0 4px 6px rgba(59, 130, 246, 0.1)'
-                    }
-                }, [
-                    createElement('div', {key: 'icon', style: {fontSize: '2rem', marginBottom: '1rem'}}, '🔧'),
-                    createElement('h3', {key: 'title', style: {margin: '0 0 0.5rem 0', color: '#1e40af', fontSize: '1.25rem', fontWeight: 'bold'}}, componentName + ' Component'),
-                    createElement('p', {key: 'desc', style: {margin: '0 0 1rem 0', fontSize: '0.875rem', opacity: 0.8}}, 'Auto-generated mock component for live preview'),
-                    createElement('div', {key: 'info', style: {fontSize: '0.75rem', opacity: 0.6, background: 'rgba(59, 130, 246, 0.1)', padding: '0.5rem', borderRadius: '4px'}}, 'This component will be properly implemented in the generated code')
-                ]);
-                
-                mockComponents[componentName] = dynamicComponent;
-                window[componentName] = dynamicComponent;
-                console.log('Pre-created mock component for import:', componentName);
-            }
-        });
-        
-        // Remove import statements from the code since they're not needed in this context
-        // React and ReactDOM are already available globally
-        processedCode = processedCode.replace(/import\\s+.*?from\\s+['"][^'"]+['"];?\\n?/g, '');
-        
-        // Scan for component usage in JSX and create mock components proactively
-        const jsxComponentMatches = processedCode.match(/<([A-Z][a-zA-Z0-9]*)\\b/g) || [];
-        const usedComponents = [...new Set(jsxComponentMatches.map(match => match.slice(1)))];
-        
-        usedComponents.forEach(componentName => {
-            if (!mockComponents[componentName] && componentName !== 'div' && componentName !== 'span' && componentName !== 'p' && componentName !== 'h1' && componentName !== 'h2' && componentName !== 'h3' && componentName !== 'button' && componentName !== 'input' && componentName !== 'img' && componentName !== 'a' && componentName !== 'ul' && componentName !== 'li') {
-                const dynamicComponent = () => createElement('div', {
-                    style: {
-                        padding: '2rem',
-                        border: '2px dashed #3b82f6',
-                        borderRadius: '8px',
-                        background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
-                        color: '#1e40af',
-                        textAlign: 'center',
-                        margin: '1rem 0',
-                        boxShadow: '0 4px 6px rgba(59, 130, 246, 0.1)'
-                    }
-                }, [
-                    createElement('div', {key: 'icon', style: {fontSize: '2rem', marginBottom: '1rem'}}, '🔧'),
-                    createElement('h3', {key: 'title', style: {margin: '0 0 0.5rem 0', color: '#1e40af', fontSize: '1.25rem', fontWeight: 'bold'}}, componentName + ' Component'),
-                    createElement('p', {key: 'desc', style: {margin: '0 0 1rem 0', fontSize: '0.875rem', opacity: 0.8}}, 'Auto-generated mock component for live preview'),
-                    createElement('div', {key: 'info', style: {fontSize: '0.75rem', opacity: 0.6, background: 'rgba(59, 130, 246, 0.1)', padding: '0.5rem', borderRadius: '4px'}}, 'This component will be properly implemented in the generated code')
-                ]);
-                
-                mockComponents[componentName] = dynamicComponent;
-                window[componentName] = dynamicComponent;
-                console.log('Pre-created mock component for JSX usage:', componentName);
-            }
-        });
-        
-        // Remove TypeScript type annotations (function return types, parameter types, interfaces, types)
-        processedCode = processedCode
-          // Remove function return types: function App(): JSX.Element
-          .replace(/function\\s+\\w+\\s*\\([^)]*\\)\\s*:\\s*[^\\{]+\\{/g, match =>
-            match.replace(/:\\s*[^\\{]+\\{/, '{')
-          )
-          // Remove arrow function return types: const X = (...) : JSX.Element =>
-          .replace(/=\\s*\\([^)]*\\)\\s*:\\s*[^=]+=>/g, match =>
-            match.replace(/:\\s*[^=]+=>/, '=>')
-          )
-          // Remove parameter types: (foo: string, bar: number)
-          .replace(/\\([^)]+\\)/g, params =>
-            params.replace(/:\\s*\\w+/g, '')
-          )
-          // Remove interface/type declarations
-          .replace(/(interface|type)\\s+\\w+[^{=]*[\\{=][^\\}]*\\}/g, '')
-          // Remove any remaining : Type after variable names
-          .replace(/:\\s*\\w+/g, '');
-        
-        processedCode = processedCode.replace(/export\\s+default\\s+/g, 'window.UserComponent = ');
-        processedCode = processedCode.replace(/export\\s+/g, '');
-        
-        try {
-            // Transform JSX to JS using Babel
-            const transpiledCode = Babel.transform(processedCode, { presets: ['react'] }).code;
-            // Execute the transpiled code
-            eval(transpiledCode);
-        } catch (syntaxError) {
-            console.error('Syntax error in component code:', syntaxError);
-            const ErrorDisplay = () => (
-                <div className="error-boundary">
-                    <div className="error-title">
-                        <span>❌</span>
-                        <span>Syntax Error</span>
+            });
+            
+            // Create mock components for all imported components
+            importedComponents.forEach(componentName => {
+                if (!mockComponents[componentName]) {
+                    const dynamicComponent = () => createElement('div', {
+                        style: {
+                            padding: '2rem',
+                            border: '2px dashed #3b82f6',
+                            borderRadius: '8px',
+                            background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
+                            color: '#1e40af',
+                            textAlign: 'center',
+                            margin: '1rem 0',
+                            boxShadow: '0 4px 6px rgba(59, 130, 246, 0.1)'
+                        }
+                    }, [
+                        createElement('div', {key: 'icon', style: {fontSize: '2rem', marginBottom: '1rem'}}, '🔧'),
+                        createElement('h3', {key: 'title', style: {margin: '0 0 0.5rem 0', color: '#1e40af', fontSize: '1.25rem', fontWeight: 'bold'}}, componentName + ' Component'),
+                        createElement('p', {key: 'desc', style: {margin: '0 0 1rem 0', fontSize: '0.875rem', opacity: 0.8}}, 'Auto-generated mock component for live preview'),
+                        createElement('div', {key: 'info', style: {fontSize: '0.75rem', opacity: 0.6, background: 'rgba(59, 130, 246, 0.1)', padding: '0.5rem', borderRadius: '4px'}}, 'This component will be properly implemented in the generated code')
+                    ]);
+                    
+                    mockComponents[componentName] = dynamicComponent;
+                    window[componentName] = dynamicComponent;
+                    console.log('Pre-created mock component for import:', componentName);
+                }
+            });
+            
+            // Remove import statements from the code since they're not needed in this context
+            // React and ReactDOM are already available globally
+            processedCode = processedCode.replace(/import\\s+.*?from\\s+['"][^'"]+['"];?\\n?/g, '');
+            
+            // Scan for component usage in JSX and create mock components proactively
+            const jsxComponentMatches = processedCode.match(/<([A-Z][a-zA-Z0-9]*)\\b/g) || [];
+            const usedComponents = [...new Set(jsxComponentMatches.map(match => match.slice(1)))];
+            
+            usedComponents.forEach(componentName => {
+                if (!mockComponents[componentName] && componentName !== 'div' && componentName !== 'span' && componentName !== 'p' && componentName !== 'h1' && componentName !== 'h2' && componentName !== 'h3' && componentName !== 'button' && componentName !== 'input' && componentName !== 'img' && componentName !== 'a' && componentName !== 'ul' && componentName !== 'li') {
+                    const dynamicComponent = () => createElement('div', {
+                        style: {
+                            padding: '2rem',
+                            border: '2px dashed #3b82f6',
+                            borderRadius: '8px',
+                            background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
+                            color: '#1e40af',
+                            textAlign: 'center',
+                            margin: '1rem 0',
+                            boxShadow: '0 4px 6px rgba(59, 130, 246, 0.1)'
+                        }
+                    }, [
+                        createElement('div', {key: 'icon', style: {fontSize: '2rem', marginBottom: '1rem'}}, '🔧'),
+                        createElement('h3', {key: 'title', style: {margin: '0 0 0.5rem 0', color: '#1e40af', fontSize: '1.25rem', fontWeight: 'bold'}}, componentName + ' Component'),
+                        createElement('p', {key: 'desc', style: {margin: '0 0 1rem 0', fontSize: '0.875rem', opacity: 0.8}}, 'Auto-generated mock component for live preview'),
+                        createElement('div', {key: 'info', style: {fontSize: '0.75rem', opacity: 0.6, background: 'rgba(59, 130, 246, 0.1)', padding: '0.5rem', borderRadius: '4px'}}, 'This component will be properly implemented in the generated code')
+                    ]);
+                    
+                    mockComponents[componentName] = dynamicComponent;
+                    window[componentName] = dynamicComponent;
+                    console.log('Pre-created mock component for JSX usage:', componentName);
+                }
+            });
+            
+            // Remove TypeScript type annotations (function return types, parameter types, interfaces, types)
+            processedCode = processedCode
+              // Remove function return types: function App(): JSX.Element
+              .replace(/function\\s+\\w+\\s*\\([^)]*\\)\\s*:\\s*[^\\{]+\\{/g, match =>
+                match.replace(/:\\s*[^\\{]+\\{/, '{')
+              )
+              // Remove arrow function return types: const X = (...) : JSX.Element =>
+              .replace(/=\\s*\\([^)]*\\)\\s*:\\s*[^=]+=>/g, match =>
+                match.replace(/:\\s*[^=]+=>/, '=>')
+              )
+              // Remove parameter types: (foo: string, bar: number)
+              .replace(/\\([^)]+\\)/g, params =>
+                params.replace(/:\\s*\\w+/g, '')
+              )
+              // Remove interface/type declarations
+              .replace(/(interface|type)\\s+\\w+[^{=]*[\\{=][^\\}]*\\}/g, '')
+              // Remove any remaining : Type after variable names
+              .replace(/:\\s*\\w+/g, '');
+            
+            processedCode = processedCode.replace(/export\\s+default\\s+/g, 'window.UserComponent = ');
+            processedCode = processedCode.replace(/export\\s+/g, '');
+            
+            try {
+                // Transform JSX to JS using Babel
+                const transpiledCode = Babel.transform(processedCode, { presets: ['react'] }).code;
+                // Execute the transpiled code
+                eval(transpiledCode);
+            } catch (syntaxError) {
+                console.error('Syntax error in component code:', syntaxError);
+                const ErrorDisplay = () => (
+                    <div className="error-boundary">
+                        <div className="error-title">
+                            <span>❌</span>
+                            <span>Syntax Error</span>
+                        </div>
+                        <div className="error-message">
+                            <strong>Error:</strong> {syntaxError.message}
+                        </div>
                     </div>
-                    <div className="error-message">
-                        <strong>Error:</strong> {syntaxError.message}
-                    </div>
-                </div>
-            );
-            window.UserComponent = ErrorDisplay;
-        }
+                );
+                window.UserComponent = ErrorDisplay;
+            }
+        })();
 
         // Render the component
         const root = ReactDOM.createRoot(document.getElementById('root'));
