@@ -401,11 +401,17 @@ function generateAdvancedPreviewHTML(code, analysis) {
 
         // Helper function to safely create React elements
         const createElement = (type, props, ...children) => {
-            if (typeof React === 'undefined') {
+            if (typeof React === 'undefined' || typeof React.createElement === 'undefined') {
                 console.error('React is not available for createElement');
-                return null;
+                // Return a simple div as fallback
+                return { type: 'div', props: { ...props, style: { color: 'red', padding: '1rem' } }, children: ['React not available'] };
             }
-            return React.createElement(type, props, ...children);
+            try {
+                return React.createElement(type, props, ...children);
+            } catch (error) {
+                console.error('Error in createElement:', error);
+                return React.createElement('div', { style: { color: 'red', padding: '1rem' } }, 'Error creating element');
+            }
         };
 
         // Wait for React to be available before creating components
@@ -677,47 +683,54 @@ function generateAdvancedPreviewHTML(code, analysis) {
             }
         })();
 
-        // Render the component
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        
-        // Simple wrapper using createElement to avoid React availability issues
-        const PreviewWrapper = () => {
-            const ComponentToRender = window.UserComponent || ${componentName};
-            return createElement(ComponentToRender);
+        // Render the component after React is available
+        const renderComponent = async () => {
+            await waitForReact();
+            
+            const root = ReactDOM.createRoot(document.getElementById('root'));
+            
+            // Simple wrapper using createElement to avoid React availability issues
+            const PreviewWrapper = () => {
+                const ComponentToRender = window.UserComponent || ${componentName};
+                return createElement(ComponentToRender);
+            };
+            
+            // Notify parent that preview is ready after a small delay
+            setTimeout(() => {
+                if (window.parent) {
+                    window.parent.postMessage({
+                        type: 'PREVIEW_READY',
+                        componentName: '${componentName}',
+                        timestamp: new Date().toISOString()
+                    }, '*');
+                }
+            }, 100);
+            
+            try {
+                root.render(
+                    createElement(ErrorBoundary, {key: Date.now()},
+                        createElement(PreviewWrapper)
+                    )
+                );
+            } catch (renderError) {
+                console.error('Render error:', renderError);
+                root.render(
+                    createElement('div', {className: 'error-boundary'},
+                        createElement('div', {className: 'error-title'},
+                            createElement('span', {}, '💥'),
+                            createElement('span', {}, 'Render Error')
+                        ),
+                        createElement('div', {className: 'error-message'},
+                            createElement('strong', {}, 'Error:'),
+                            createElement('span', {}, renderError.message)
+                        )
+                    )
+                );
+            }
         };
         
-        // Notify parent that preview is ready after a small delay
-        setTimeout(() => {
-            if (window.parent) {
-                window.parent.postMessage({
-                    type: 'PREVIEW_READY',
-                    componentName: '${componentName}',
-                    timestamp: new Date().toISOString()
-                }, '*');
-            }
-        }, 100);
-        
-        try {
-            root.render(
-                createElement(ErrorBoundary, {key: Date.now()},
-                    createElement(PreviewWrapper)
-                )
-            );
-        } catch (renderError) {
-            console.error('Render error:', renderError);
-            root.render(
-                createElement('div', {className: 'error-boundary'},
-                    createElement('div', {className: 'error-title'},
-                        createElement('span', {}, '💥'),
-                        createElement('span', {}, 'Render Error')
-                    ),
-                    createElement('div', {className: 'error-message'},
-                        createElement('strong', {}, 'Error:'),
-                        createElement('span', {}, renderError.message)
-                    )
-                )
-            );
-        }
+        // Start rendering after components are initialized
+        renderComponent();
     </script>
 </body>
 </html>`;
