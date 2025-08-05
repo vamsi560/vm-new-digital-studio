@@ -646,7 +646,11 @@ function generateAdvancedPreviewHTML(code, analysis) {
               // Remove interface/type declarations
               .replace(/(interface|type)\\s+\\w+[^{=]*[\\{=][^\\}]*\\}/g, '')
               // Remove any remaining : Type after variable names
-              .replace(/:\\s*\\w+/g, '');
+              .replace(/:\\s*\\w+/g, '')
+              // Fix invalid TypeScript syntax like "const App.FC ="
+              .replace(/const\\s+(\\w+)\\.\\w+\\s*=/g, 'const $1 =')
+              // Fix "const App: React.FC ="
+              .replace(/const\\s+(\\w+)\\s*:\\s*\\w+\\.\\w+\\s*=/g, 'const $1 =');
             
             processedCode = processedCode.replace(/export\\s+default\\s+/g, 'window.UserComponent = ');
             processedCode = processedCode.replace(/export\\s+/g, '');
@@ -676,10 +680,10 @@ function generateAdvancedPreviewHTML(code, analysis) {
         // Render the component
         const root = ReactDOM.createRoot(document.getElementById('root'));
         
-        // Simple wrapper without hooks to avoid React.useState issues
+        // Simple wrapper using createElement to avoid React availability issues
         const PreviewWrapper = () => {
             const ComponentToRender = window.UserComponent || ${componentName};
-            return <ComponentToRender />;
+            return createElement(ComponentToRender);
         };
         
         // Notify parent that preview is ready after a small delay
@@ -695,22 +699,23 @@ function generateAdvancedPreviewHTML(code, analysis) {
         
         try {
             root.render(
-                <ErrorBoundary key={Date.now()}>
-                    <PreviewWrapper />
-                </ErrorBoundary>
+                createElement(ErrorBoundary, {key: Date.now()},
+                    createElement(PreviewWrapper)
+                )
             );
         } catch (renderError) {
             console.error('Render error:', renderError);
             root.render(
-                <div className="error-boundary">
-                    <div className="error-title">
-                        <span>💥</span>
-                        <span>Render Error</span>
-                    </div>
-                    <div className="error-message">
-                        <strong>Error:</strong> {renderError.message}
-                    </div>
-                </div>
+                createElement('div', {className: 'error-boundary'},
+                    createElement('div', {className: 'error-title'},
+                        createElement('span', {}, '💥'),
+                        createElement('span', {}, 'Render Error')
+                    ),
+                    createElement('div', {className: 'error-message'},
+                        createElement('strong', {}, 'Error:'),
+                        createElement('span', {}, renderError.message)
+                    )
+                )
             );
         }
     </script>
