@@ -1,19 +1,33 @@
 // backend/api/live-preview.js
 
 export default async function handler(req, res) {
+  // Add security headers
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Content-Security-Policy', "default-src 'self' 'unsafe-inline' 'unsafe-eval' https: data: blob:;");
+
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    const { code, type = 'component' } = req.body;
+    const { code, type = 'component', options = {} } = req.body;
     
     if (!code) {
       return res.status(400).json({ error: 'No code provided' });
     }
 
-    // Process the code for live preview
-    const previewData = await generateLivePreview(code, type);
+    // Validate code size (prevent abuse)
+    if (code.length > 50000) {
+      return res.status(413).json({ 
+        error: 'Code too large', 
+        details: 'Maximum 50KB allowed for preview' 
+      });
+    }
+
+    // Process the code for live preview with enhanced options
+    const previewData = await generateLivePreview(code, type, options);
     
     res.status(200).json(previewData);
   } catch (error) {
@@ -25,28 +39,32 @@ export default async function handler(req, res) {
   }
 }
 
-async function generateLivePreview(code, type) {
+async function generateLivePreview(code, type, options = {}) {
   try {
-    // Validate and analyze the code
-    const validation = await validateAndAnalyzeCode(code);
+    // Enhanced validation with more detailed analysis
+    const validation = await validateAndAnalyzeCode(code, options);
     
     if (!validation.isValid) {
       return {
         success: false,
         error: validation.error,
-        suggestions: validation.suggestions || []
+        suggestions: validation.suggestions || [],
+        analysis: validation.partialAnalysis || {}
       };
     }
 
-    // Generate the preview HTML
-    const previewHTML = generateAdvancedPreviewHTML(code, validation.analysis);
+    // Generate the preview HTML with enhanced features
+    const previewHTML = generateAdvancedPreviewHTML(code, validation.analysis, options);
     
     return {
       success: true,
       previewHTML,
       analysis: validation.analysis,
       dependencies: extractAllDependencies(code),
-      timestamp: new Date().toISOString()
+      performance: calculatePerformanceMetrics(code),
+      accessibility: analyzeAccessibility(code),
+      timestamp: new Date().toISOString(),
+      previewUrl: generatePreviewUrl(code, validation.analysis.componentName)
     };
   } catch (error) {
     return {
@@ -57,7 +75,7 @@ async function generateLivePreview(code, type) {
   }
 }
 
-async function validateAndAnalyzeCode(code) {
+async function validateAndAnalyzeCode(code, options = {}) {
   try {
     // Basic syntax validation
     if (!code.trim()) {
@@ -68,13 +86,27 @@ async function validateAndAnalyzeCode(code) {
       };
     }
 
+    // Enhanced syntax validation
+    const syntaxValidation = validateSyntax(code);
+    if (!syntaxValidation.isValid) {
+      return {
+        isValid: false,
+        error: syntaxValidation.error,
+        suggestions: syntaxValidation.suggestions,
+        partialAnalysis: syntaxValidation.partialAnalysis
+      };
+    }
+
     // Extract component name
     const componentName = extractComponentName(code);
     
-    // Enhanced analysis
+    // Enhanced analysis with more metrics
     const imports = extractImports(code);
     const hooks = extractHooks(code);
     const complexity = calculateComplexity(code);
+    const performance = calculatePerformanceMetrics(code);
+    const accessibility = analyzeAccessibility(code);
+    const security = analyzeSecurity(code);
     
     const analysis = {
       componentName,
@@ -88,7 +120,12 @@ async function validateAndAnalyzeCode(code) {
       imports: imports,
       hooks: hooks,
       complexity: complexity,
-      description: generateComponentDescription(code, componentName, hooks, imports)
+      performance: performance,
+      accessibility: accessibility,
+      security: security,
+      description: generateComponentDescription(code, componentName, hooks, imports),
+      estimatedBundleSize: estimateBundleSize(code, imports),
+      renderOptimization: analyzeRenderOptimization(code)
     };
 
     return {
@@ -102,6 +139,172 @@ async function validateAndAnalyzeCode(code) {
       suggestions: ['Check for syntax errors', 'Ensure valid JavaScript/JSX']
     };
   }
+}
+
+function validateSyntax(code) {
+  const errors = [];
+  const suggestions = [];
+  const partialAnalysis = {};
+
+  // Check for common React syntax issues
+  if (code.includes('ReactDOM.render') && !code.includes('createRoot')) {
+    suggestions.push('Consider using React 18 createRoot instead of ReactDOM.render');
+  }
+
+  // Check for missing dependencies in useEffect
+  const useEffectMatches = code.match(/useEffect\s*\(\s*\(\)\s*=>\s*\{[^}]*\},\s*\[\s*\]\s*\)/g);
+  if (useEffectMatches) {
+    suggestions.push('Empty dependency array detected - consider if dependencies are needed');
+  }
+
+  // Check for potential memory leaks
+  if (code.includes('addEventListener') && !code.includes('removeEventListener')) {
+    suggestions.push('Consider cleaning up event listeners to prevent memory leaks');
+  }
+
+  // Check for accessibility issues
+  if (code.includes('<div') && code.includes('onClick') && !code.includes('role=') && !code.includes('tabIndex=')) {
+    suggestions.push('Consider adding role and tabIndex for better accessibility');
+  }
+
+  // Check for performance issues
+  if (code.includes('useState') && code.includes('setState') && code.includes('prevState')) {
+    suggestions.push('Consider using functional updates for state to avoid stale closures');
+  }
+
+  return {
+    isValid: errors.length === 0,
+    error: errors.length > 0 ? errors.join('; ') : null,
+    suggestions,
+    partialAnalysis
+  };
+}
+
+function calculatePerformanceMetrics(code) {
+  const metrics = {
+    hasMemoization: code.includes('React.memo') || code.includes('useMemo') || code.includes('useCallback'),
+    hasOptimization: code.includes('React.memo') || code.includes('useMemo') || code.includes('useCallback') || code.includes('shouldComponentUpdate'),
+    hasLazyLoading: code.includes('React.lazy') || code.includes('Suspense'),
+    hasCodeSplitting: code.includes('import(') || code.includes('React.lazy'),
+    estimatedRenders: estimateRenderCount(code),
+    potentialBottlenecks: detectPerformanceBottlenecks(code)
+  };
+
+  return metrics;
+}
+
+function analyzeAccessibility(code) {
+  const issues = [];
+  const suggestions = [];
+
+  // Check for missing alt attributes
+  if (code.includes('<img') && !code.includes('alt=')) {
+    issues.push('Missing alt attribute on images');
+    suggestions.push('Add alt attributes to all images for screen readers');
+  }
+
+  // Check for missing ARIA labels
+  if (code.includes('onClick') && !code.includes('aria-label') && !code.includes('aria-labelledby')) {
+    suggestions.push('Consider adding ARIA labels for interactive elements');
+  }
+
+  // Check for semantic HTML
+  if (code.includes('<div') && code.includes('onClick') && !code.includes('<button')) {
+    suggestions.push('Consider using semantic HTML elements (button, link) instead of div with onClick');
+  }
+
+  return {
+    issues,
+    suggestions,
+    score: calculateAccessibilityScore(code)
+  };
+}
+
+function analyzeSecurity(code) {
+  const issues = [];
+  const suggestions = [];
+
+  // Check for XSS vulnerabilities
+  if (code.includes('dangerouslySetInnerHTML')) {
+    issues.push('Using dangerouslySetInnerHTML - potential XSS risk');
+    suggestions.push('Sanitize HTML content before using dangerouslySetInnerHTML');
+  }
+
+  // Check for eval usage
+  if (code.includes('eval(')) {
+    issues.push('Using eval() - security risk');
+    suggestions.push('Avoid using eval() - consider alternative approaches');
+  }
+
+  return {
+    issues,
+    suggestions,
+    riskLevel: issues.length > 0 ? 'medium' : 'low'
+  };
+}
+
+function estimateBundleSize(code, imports) {
+  let baseSize = code.length * 0.1; // Rough estimate
+  imports.forEach(imp => {
+    if (imp.source.includes('react')) baseSize += 50;
+    else if (imp.source.includes('@')) baseSize += 30;
+    else baseSize += 20;
+  });
+  return Math.round(baseSize);
+}
+
+function analyzeRenderOptimization(code) {
+  const optimizations = [];
+  
+  if (code.includes('React.memo')) optimizations.push('Component memoization');
+  if (code.includes('useMemo')) optimizations.push('Value memoization');
+  if (code.includes('useCallback')) optimizations.push('Function memoization');
+  if (code.includes('shouldComponentUpdate')) optimizations.push('Custom render optimization');
+  
+  return optimizations;
+}
+
+function detectPerformanceBottlenecks(code) {
+  const bottlenecks = [];
+  
+  if (code.includes('setState') && code.includes('prevState')) {
+    bottlenecks.push('Potential stale closure in state updates');
+  }
+  
+  if (code.includes('useEffect') && code.includes('[]')) {
+    bottlenecks.push('Empty dependency array might miss dependencies');
+  }
+  
+  if (code.includes('map') && code.includes('key=')) {
+    bottlenecks.push('Missing key prop in list rendering');
+  }
+  
+  return bottlenecks;
+}
+
+function estimateRenderCount(code) {
+  let count = 1; // Base render
+  if (code.includes('useState')) count += 2;
+  if (code.includes('useEffect')) count += 1;
+  if (code.includes('useContext')) count += 1;
+  return count;
+}
+
+function calculateAccessibilityScore(code) {
+  let score = 100;
+  
+  if (code.includes('<img') && !code.includes('alt=')) score -= 20;
+  if (code.includes('onClick') && !code.includes('aria-label')) score -= 15;
+  if (code.includes('<div') && code.includes('onClick')) score -= 10;
+  
+  return Math.max(0, score);
+}
+
+function generatePreviewUrl(code, componentName) {
+  // Generate a unique URL for the preview
+  const timestamp = Date.now();
+  const hash = btoa(code.substring(0, 100)).replace(/[^a-zA-Z0-9]/g, '');
+  return `/preview/${componentName}-${timestamp}-${hash}`;
 }
 
 function extractComponentName(code) {
@@ -207,8 +410,11 @@ function extractAllDependencies(code) {
   return [...new Set(dependencies)];
 }
 
-function generateAdvancedPreviewHTML(code, analysis) {
+function generateAdvancedPreviewHTML(code, analysis, options = {}) {
   const componentName = analysis?.componentName || extractComponentName(code);
+  const enableDebug = options.debug || false;
+  const enablePerformance = options.performance || false;
+  const enableAccessibility = options.accessibility || false;
   
   return `<!DOCTYPE html>
 <html lang="en">
@@ -284,6 +490,60 @@ function generateAdvancedPreviewHTML(code, analysis) {
             100% { transform: rotate(360deg); }
         }
         
+        /* Debug Panel Styles */
+        .debug-panel {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 12px;
+            max-width: 300px;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+        }
+        .debug-panel h4 {
+            margin: 0 0 8px 0;
+            color: #60a5fa;
+        }
+        .debug-panel .metric {
+            margin: 4px 0;
+            display: flex;
+            justify-content: space-between;
+        }
+        .debug-panel .metric .value {
+            color: #34d399;
+        }
+        
+        /* Performance Monitor */
+        .performance-monitor {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(59, 130, 246, 0.9);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            z-index: 1000;
+        }
+        
+        /* Accessibility Checker */
+        .accessibility-checker {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(16, 185, 129, 0.9);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            z-index: 1000;
+            cursor: pointer;
+        }
+        
         /* Custom scrollbar */
         ::-webkit-scrollbar {
             width: 8px;
@@ -299,10 +559,129 @@ function generateAdvancedPreviewHTML(code, analysis) {
         ::-webkit-scrollbar-thumb:hover {
             background: #94a3b8;
         }
+        
+        /* Component Info Panel */
+        .component-info {
+            background: rgba(255, 255, 255, 0.95);
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 16px;
+            font-size: 14px;
+        }
+        .component-info h3 {
+            margin: 0 0 8px 0;
+            color: #374151;
+            font-size: 16px;
+        }
+        .component-info .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 8px;
+        }
+        .component-info .info-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+        }
+        .component-info .info-label {
+            color: #6b7280;
+            font-weight: 500;
+        }
+        .component-info .info-value {
+            color: #374151;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
+    ${enableDebug ? `
+    <div class="debug-panel">
+        <h4>🔧 Debug Info</h4>
+        <div class="metric">
+            <span>Component:</span>
+            <span class="value">${componentName}</span>
+        </div>
+        <div class="metric">
+            <span>Type:</span>
+            <span class="value">${analysis?.componentType || 'unknown'}</span>
+        </div>
+        <div class="metric">
+            <span>Lines:</span>
+            <span class="value">${analysis?.linesOfCode || 0}</span>
+        </div>
+        <div class="metric">
+            <span>Hooks:</span>
+            <span class="value">${analysis?.hooks?.length || 0}</span>
+        </div>
+        <div class="metric">
+            <span>Imports:</span>
+            <span class="value">${analysis?.imports?.length || 0}</span>
+        </div>
+        <div class="metric">
+            <span>Complexity:</span>
+            <span class="value">${analysis?.complexity || 'unknown'}</span>
+        </div>
+    </div>
+    ` : ''}
+    
+    ${enablePerformance ? `
+    <div class="performance-monitor" id="performanceMonitor">
+        ⚡ Performance: <span id="renderTime">-</span>ms
+    </div>
+    ` : ''}
+    
+    ${enableAccessibility ? `
+    <div class="accessibility-checker" onclick="toggleAccessibilityReport()">
+        ♿ A11Y: <span id="accessibilityScore">${analysis?.accessibility?.score || 100}</span>
+    </div>
+    ` : ''}
+    
     <div class="preview-container">
+        ${analysis ? `
+        <div class="component-info">
+            <h3>📊 Component Analysis</h3>
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="info-label">Name:</span>
+                    <span class="info-value">${componentName}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Type:</span>
+                    <span class="info-value">${analysis.componentType}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Lines of Code:</span>
+                    <span class="info-value">${analysis.linesOfCode}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Complexity:</span>
+                    <span class="info-value">${analysis.complexity}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Hooks Used:</span>
+                    <span class="info-value">${analysis.hooks?.length || 0}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Dependencies:</span>
+                    <span class="info-value">${analysis.imports?.length || 0}</span>
+                </div>
+                ${analysis.performance ? `
+                <div class="info-item">
+                    <span class="info-label">Optimizations:</span>
+                    <span class="info-value">${analysis.performance.hasOptimization ? 'Yes' : 'No'}</span>
+                </div>
+                ` : ''}
+                ${analysis.accessibility ? `
+                <div class="info-item">
+                    <span class="info-label">A11Y Score:</span>
+                    <span class="info-value">${analysis.accessibility.score}/100</span>
+                </div>
+                ` : ''}
+            </div>
+        </div>
+        ` : ''}
+        
         <div id="root">
             <div class="loading">
                 <div class="loading-spinner"></div>
@@ -312,6 +691,45 @@ function generateAdvancedPreviewHTML(code, analysis) {
     </div>
     
     <script type="text/babel">
+        // Performance monitoring
+        let renderStartTime = 0;
+        let renderEndTime = 0;
+        
+        const startRenderTimer = () => {
+            renderStartTime = performance.now();
+        };
+        
+        const endRenderTimer = () => {
+            renderEndTime = performance.now();
+            const renderTime = Math.round(renderEndTime - renderStartTime);
+            
+            if (window.parent) {
+                window.parent.postMessage({
+                    type: 'PERFORMANCE_METRICS',
+                    renderTime: renderTime,
+                    timestamp: new Date().toISOString()
+                }, '*');
+            }
+            
+            const performanceMonitor = document.getElementById('performanceMonitor');
+            if (performanceMonitor) {
+                document.getElementById('renderTime').textContent = renderTime;
+            }
+        };
+        
+        // Accessibility checker
+        const toggleAccessibilityReport = () => {
+            const issues = ${JSON.stringify(analysis?.accessibility?.issues || [])};
+            const suggestions = ${JSON.stringify(analysis?.accessibility?.suggestions || [])};
+            
+            if (issues.length > 0 || suggestions.length > 0) {
+                const report = \`Accessibility Report:\\n\\nIssues:\\n\${issues.map(issue => '• ' + issue).join('\\n')}\\n\\nSuggestions:\\n\${suggestions.map(suggestion => '• ' + suggestion).join('\\n')}\`;
+                alert(report);
+            } else {
+                alert('No accessibility issues detected! 🎉');
+            }
+        };
+
         // Enhanced Error Boundary with better error handling
         class ErrorBoundary extends React.Component {
             constructor(props) {
@@ -695,6 +1113,9 @@ function generateAdvancedPreviewHTML(code, analysis) {
                 return createElement(ComponentToRender);
             };
             
+            // Start performance monitoring
+            startRenderTimer();
+            
             // Notify parent that preview is ready after a small delay
             setTimeout(() => {
                 if (window.parent) {
@@ -704,6 +1125,9 @@ function generateAdvancedPreviewHTML(code, analysis) {
                         timestamp: new Date().toISOString()
                     }, '*');
                 }
+                
+                // End performance monitoring
+                endRenderTimer();
             }, 100);
             
             try {
@@ -714,6 +1138,7 @@ function generateAdvancedPreviewHTML(code, analysis) {
                 );
             } catch (renderError) {
                 console.error('Render error:', renderError);
+                endRenderTimer();
                 root.render(
                     createElement('div', {className: 'error-boundary'},
                         createElement('div', {className: 'error-title'},
