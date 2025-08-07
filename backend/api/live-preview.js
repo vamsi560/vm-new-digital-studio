@@ -422,8 +422,8 @@ function generateAdvancedPreviewHTML(code, analysis, options = {}) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${componentName} - Live Preview</title>
-    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/react@19/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@19/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -691,6 +691,23 @@ function generateAdvancedPreviewHTML(code, analysis, options = {}) {
     </div>
     
     <script type="text/babel">
+        // Ensure all dependencies are loaded before running
+        const checkDependencies = () => {
+            if (typeof React === 'undefined') {
+                console.error('React is not loaded');
+                return false;
+            }
+            if (typeof ReactDOM === 'undefined') {
+                console.error('ReactDOM is not loaded');
+                return false;
+            }
+            if (typeof Babel === 'undefined') {
+                console.error('Babel is not loaded');
+                return false;
+            }
+            return true;
+        };
+
         // Performance monitoring
         let renderStartTime = 0;
         let renderEndTime = 0;
@@ -821,8 +838,8 @@ function generateAdvancedPreviewHTML(code, analysis, options = {}) {
         const createElement = (type, props, ...children) => {
             if (typeof React === 'undefined' || typeof React.createElement === 'undefined') {
                 console.error('React is not available for createElement');
-                // Return a simple div as fallback
-                return { type: 'div', props: { ...props, style: { color: 'red', padding: '1rem' } }, children: ['React not available'] };
+                // Return null instead of an object to prevent React child errors
+                return null;
             }
             try {
                 return React.createElement(type, props, ...children);
@@ -835,14 +852,14 @@ function generateAdvancedPreviewHTML(code, analysis, options = {}) {
         // Wait for React to be available before creating components
         const waitForReact = () => {
             return new Promise((resolve) => {
-                if (typeof React !== 'undefined') {
+                if (typeof React !== 'undefined' && typeof React.createElement !== 'undefined') {
                     resolve();
                 } else {
                     const checkReact = () => {
-                        if (typeof React !== 'undefined') {
+                        if (typeof React !== 'undefined' && typeof React.createElement !== 'undefined') {
                             resolve();
                         } else {
-                            setTimeout(checkReact, 10);
+                            setTimeout(checkReact, 50);
                         }
                     };
                     checkReact();
@@ -853,9 +870,9 @@ function generateAdvancedPreviewHTML(code, analysis, options = {}) {
         // Mock common React libraries for preview
         const mockLibraries = {
             'react-router-dom': {
-                BrowserRouter: ({children}) => createElement('div', {}, children),
-                Route: ({children}) => createElement('div', {}, children),
-                Link: ({children, to, ...props}) => createElement('a', {href: to, ...props}, children),
+                BrowserRouter: ({children}) => React.createElement('div', {}, children),
+                Route: ({children}) => React.createElement('div', {}, children),
+                Link: ({children, to, ...props}) => React.createElement('a', {href: to, ...props}, children),
                 useNavigate: () => (path) => console.log('Navigate to:', path),
                 useParams: () => ({}),
                 useLocation: () => ({pathname: '/', search: '', hash: ''})
@@ -868,23 +885,23 @@ function generateAdvancedPreviewHTML(code, analysis, options = {}) {
             
             // Mock common components that might be missing
             const mockComponents = {
-                Header: () => createElement('header', {style: {padding: '1rem', background: '#f3f4f6'}}, 'Header Component'),
-                Footer: () => createElement('footer', {style: {padding: '1rem', background: '#f3f4f6'}}, 'Footer Component'),
-                Sidebar: () => createElement('aside', {style: {padding: '1rem', background: '#e5e7eb'}}, 'Sidebar Component'),
-                Navigation: () => createElement('nav', {style: {padding: '1rem', background: '#d1d5db'}}, 'Navigation Component'),
-                Layout: ({children}) => createElement('div', {style: {display: 'flex', flexDirection: 'column', minHeight: '100vh'}}, children),
-                Container: ({children}) => createElement('div', {style: {maxWidth: '1200px', margin: '0 auto', padding: '0 1rem'}}, children),
-                Button: ({children, ...props}) => createElement('button', {style: {padding: '8px 16px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer'}, ...props}, children),
-                Card: ({children, ...props}) => createElement('div', {style: {padding: '1rem', border: '1px solid #e5e7eb', borderRadius: '8px', background: 'white'}, ...props}, children),
-                Input: ({...props}) => createElement('input', {style: {padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: '4px', width: '100%'}, ...props}),
-                Text: ({children, ...props}) => createElement('p', {style: {margin: '0'}, ...props}, children),
-                Title: ({children, ...props}) => createElement('h1', {style: {margin: '0 0 1rem 0', fontSize: '1.5rem', fontWeight: 'bold'}, ...props}, children),
-                Subtitle: ({children, ...props}) => createElement('h2', {style: {margin: '0 0 0.5rem 0', fontSize: '1.25rem', fontWeight: '600'}, ...props}, children),
-                Div: ({children, ...props}) => createElement('div', props, children),
-                Span: ({children, ...props}) => createElement('span', props, children),
-                Image: ({src, alt, ...props}) => createElement('img', {src, alt, style: {maxWidth: '100%', height: 'auto'}, ...props}),
-                List: ({children, ...props}) => createElement('ul', {style: {margin: '0', padding: '0 0 0 1.5rem'}, ...props}, children),
-                ListItem: ({children, ...props}) => createElement('li', {style: {margin: '0.25rem 0'}, ...props}, children),
+                Header: () => React.createElement('header', {style: {padding: '1rem', background: '#f3f4f6'}}, 'Header Component'),
+                Footer: () => React.createElement('footer', {style: {padding: '1rem', background: '#f3f4f6'}}, 'Footer Component'),
+                Sidebar: () => React.createElement('aside', {style: {padding: '1rem', background: '#e5e7eb'}}, 'Sidebar Component'),
+                Navigation: () => React.createElement('nav', {style: {padding: '1rem', background: '#d1d5db'}}, 'Navigation Component'),
+                Layout: ({children}) => React.createElement('div', {style: {display: 'flex', flexDirection: 'column', minHeight: '100vh'}}, children),
+                Container: ({children}) => React.createElement('div', {style: {maxWidth: '1200px', margin: '0 auto', padding: '0 1rem'}}, children),
+                Button: ({children, ...props}) => React.createElement('button', {style: {padding: '8px 16px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer'}, ...props}, children),
+                Card: ({children, ...props}) => React.createElement('div', {style: {padding: '1rem', border: '1px solid #e5e7eb', borderRadius: '8px', background: 'white'}, ...props}, children),
+                Input: ({...props}) => React.createElement('input', {style: {padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: '4px', width: '100%'}, ...props}),
+                Text: ({children, ...props}) => React.createElement('p', {style: {margin: '0'}, ...props}, children),
+                Title: ({children, ...props}) => React.createElement('h1', {style: {margin: '0 0 1rem 0', fontSize: '1.5rem', fontWeight: 'bold'}, ...props}, children),
+                Subtitle: ({children, ...props}) => React.createElement('h2', {style: {margin: '0 0 0.5rem 0', fontSize: '1.25rem', fontWeight: '600'}, ...props}, children),
+                Div: ({children, ...props}) => React.createElement('div', props, children),
+                Span: ({children, ...props}) => React.createElement('span', props, children),
+                Image: ({src, alt, ...props}) => React.createElement('img', {src, alt, style: {maxWidth: '100%', height: 'auto'}, ...props}),
+                List: ({children, ...props}) => React.createElement('ul', {style: {margin: '0', padding: '0 0 0 1.5rem'}, ...props}, children),
+                ListItem: ({children, ...props}) => React.createElement('li', {style: {margin: '0.25rem 0'}, ...props}, children),
                             // Basic utility components only - everything else will be created dynamically
             };
 
@@ -916,23 +933,28 @@ function generateAdvancedPreviewHTML(code, analysis, options = {}) {
                     await waitForReact();
                     
                     // Create a dynamic mock component for any undefined component
-                    const dynamicComponent = () => createElement('div', {
-                        style: {
-                            padding: '2rem',
-                            border: '2px dashed #3b82f6',
-                            borderRadius: '8px',
-                            background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
-                            color: '#1e40af',
-                            textAlign: 'center',
-                            margin: '1rem 0',
-                            boxShadow: '0 4px 6px rgba(59, 130, 246, 0.1)'
+                    const dynamicComponent = () => {
+                        if (typeof React === 'undefined') {
+                            return null;
                         }
-                    }, [
-                        createElement('div', {key: 'icon', style: {fontSize: '2rem', marginBottom: '1rem'}}, '🔧'),
-                        createElement('h3', {key: 'title', style: {margin: '0 0 0.5rem 0', color: '#1e40af', fontSize: '1.25rem', fontWeight: 'bold'}}, componentName + ' Component'),
-                        createElement('p', {key: 'desc', style: {margin: '0 0 1rem 0', fontSize: '0.875rem', opacity: 0.8}}, 'Auto-generated mock component for live preview'),
-                        createElement('div', {key: 'info', style: {fontSize: '0.75rem', opacity: 0.6, background: 'rgba(59, 130, 246, 0.1)', padding: '0.5rem', borderRadius: '4px'}}, 'This component will be properly implemented in the generated code')
-                    ]);
+                        return React.createElement('div', {
+                            style: {
+                                padding: '2rem',
+                                border: '2px dashed #3b82f6',
+                                borderRadius: '8px',
+                                background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
+                                color: '#1e40af',
+                                textAlign: 'center',
+                                margin: '1rem 0',
+                                boxShadow: '0 4px 6px rgba(59, 130, 246, 0.1)'
+                            }
+                        }, [
+                            React.createElement('div', {key: 'icon', style: {fontSize: '2rem', marginBottom: '1rem'}}, '🔧'),
+                            React.createElement('h3', {key: 'title', style: {margin: '0 0 0.5rem 0', color: '#1e40af', fontSize: '1.25rem', fontWeight: 'bold'}}, componentName + ' Component'),
+                            React.createElement('p', {key: 'desc', style: {margin: '0 0 1rem 0', fontSize: '0.875rem', opacity: 0.8}}, 'Auto-generated mock component for live preview'),
+                            React.createElement('div', {key: 'info', style: {fontSize: '0.75rem', opacity: 0.6, background: 'rgba(59, 130, 246, 0.1)', padding: '0.5rem', borderRadius: '4px'}}, 'This component will be properly implemented in the generated code')
+                        ]);
+                    };
                     
                     // Add to mock components and make globally available
                     if (!window.mockComponents) {
@@ -966,6 +988,14 @@ function generateAdvancedPreviewHTML(code, analysis, options = {}) {
 
         // Initialize components and process user code
         (async () => {
+            // Wait for all dependencies to be available
+            while (!checkDependencies()) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+            
+            // Wait for React to be available first
+            await waitForReact();
+            
             // Initialize base components
             const mockComponents = await initializeComponents();
             
@@ -995,23 +1025,28 @@ function generateAdvancedPreviewHTML(code, analysis, options = {}) {
             // Create mock components for all imported components
             importedComponents.forEach(componentName => {
                 if (!mockComponents[componentName]) {
-                    const dynamicComponent = () => createElement('div', {
-                        style: {
-                            padding: '2rem',
-                            border: '2px dashed #3b82f6',
-                            borderRadius: '8px',
-                            background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
-                            color: '#1e40af',
-                            textAlign: 'center',
-                            margin: '1rem 0',
-                            boxShadow: '0 4px 6px rgba(59, 130, 246, 0.1)'
+                    const dynamicComponent = () => {
+                        if (typeof React === 'undefined') {
+                            return null;
                         }
-                    }, [
-                        createElement('div', {key: 'icon', style: {fontSize: '2rem', marginBottom: '1rem'}}, '🔧'),
-                        createElement('h3', {key: 'title', style: {margin: '0 0 0.5rem 0', color: '#1e40af', fontSize: '1.25rem', fontWeight: 'bold'}}, componentName + ' Component'),
-                        createElement('p', {key: 'desc', style: {margin: '0 0 1rem 0', fontSize: '0.875rem', opacity: 0.8}}, 'Auto-generated mock component for live preview'),
-                        createElement('div', {key: 'info', style: {fontSize: '0.75rem', opacity: 0.6, background: 'rgba(59, 130, 246, 0.1)', padding: '0.5rem', borderRadius: '4px'}}, 'This component will be properly implemented in the generated code')
-                    ]);
+                        return React.createElement('div', {
+                            style: {
+                                padding: '2rem',
+                                border: '2px dashed #3b82f6',
+                                borderRadius: '8px',
+                                background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
+                                color: '#1e40af',
+                                textAlign: 'center',
+                                margin: '1rem 0',
+                                boxShadow: '0 4px 6px rgba(59, 130, 246, 0.1)'
+                            }
+                        }, [
+                            React.createElement('div', {key: 'icon', style: {fontSize: '2rem', marginBottom: '1rem'}}, '🔧'),
+                            React.createElement('h3', {key: 'title', style: {margin: '0 0 0.5rem 0', color: '#1e40af', fontSize: '1.25rem', fontWeight: 'bold'}}, componentName + ' Component'),
+                            React.createElement('p', {key: 'desc', style: {margin: '0 0 1rem 0', fontSize: '0.875rem', opacity: 0.8}}, 'Auto-generated mock component for live preview'),
+                            React.createElement('div', {key: 'info', style: {fontSize: '0.75rem', opacity: 0.6, background: 'rgba(59, 130, 246, 0.1)', padding: '0.5rem', borderRadius: '4px'}}, 'This component will be properly implemented in the generated code')
+                        ]);
+                    };
                     
                     mockComponents[componentName] = dynamicComponent;
                     window[componentName] = dynamicComponent;
@@ -1029,23 +1064,28 @@ function generateAdvancedPreviewHTML(code, analysis, options = {}) {
             
             usedComponents.forEach(componentName => {
                 if (!mockComponents[componentName] && componentName !== 'div' && componentName !== 'span' && componentName !== 'p' && componentName !== 'h1' && componentName !== 'h2' && componentName !== 'h3' && componentName !== 'button' && componentName !== 'input' && componentName !== 'img' && componentName !== 'a' && componentName !== 'ul' && componentName !== 'li') {
-                    const dynamicComponent = () => createElement('div', {
-                        style: {
-                            padding: '2rem',
-                            border: '2px dashed #3b82f6',
-                            borderRadius: '8px',
-                            background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
-                            color: '#1e40af',
-                            textAlign: 'center',
-                            margin: '1rem 0',
-                            boxShadow: '0 4px 6px rgba(59, 130, 246, 0.1)'
+                    const dynamicComponent = () => {
+                        if (typeof React === 'undefined') {
+                            return null;
                         }
-                    }, [
-                        createElement('div', {key: 'icon', style: {fontSize: '2rem', marginBottom: '1rem'}}, '🔧'),
-                        createElement('h3', {key: 'title', style: {margin: '0 0 0.5rem 0', color: '#1e40af', fontSize: '1.25rem', fontWeight: 'bold'}}, componentName + ' Component'),
-                        createElement('p', {key: 'desc', style: {margin: '0 0 1rem 0', fontSize: '0.875rem', opacity: 0.8}}, 'Auto-generated mock component for live preview'),
-                        createElement('div', {key: 'info', style: {fontSize: '0.75rem', opacity: 0.6, background: 'rgba(59, 130, 246, 0.1)', padding: '0.5rem', borderRadius: '4px'}}, 'This component will be properly implemented in the generated code')
-                    ]);
+                        return React.createElement('div', {
+                            style: {
+                                padding: '2rem',
+                                border: '2px dashed #3b82f6',
+                                borderRadius: '8px',
+                                background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
+                                color: '#1e40af',
+                                textAlign: 'center',
+                                margin: '1rem 0',
+                                boxShadow: '0 4px 6px rgba(59, 130, 246, 0.1)'
+                            }
+                        }, [
+                            React.createElement('div', {key: 'icon', style: {fontSize: '2rem', marginBottom: '1rem'}}, '🔧'),
+                            React.createElement('h3', {key: 'title', style: {margin: '0 0 0.5rem 0', color: '#1e40af', fontSize: '1.25rem', fontWeight: 'bold'}}, componentName + ' Component'),
+                            React.createElement('p', {key: 'desc', style: {margin: '0 0 1rem 0', fontSize: '0.875rem', opacity: 0.8}}, 'Auto-generated mock component for live preview'),
+                            React.createElement('div', {key: 'info', style: {fontSize: '0.75rem', opacity: 0.6, background: 'rgba(59, 130, 246, 0.1)', padding: '0.5rem', borderRadius: '4px'}}, 'This component will be properly implemented in the generated code')
+                        ]);
+                    };
                     
                     mockComponents[componentName] = dynamicComponent;
                     window[componentName] = dynamicComponent;
@@ -1081,22 +1121,29 @@ function generateAdvancedPreviewHTML(code, analysis, options = {}) {
             
             try {
                 // Transform JSX to JS using Babel
+                if (typeof Babel === 'undefined') {
+                    throw new Error('Babel is not available for JSX transformation');
+                }
                 const transpiledCode = Babel.transform(processedCode, { presets: ['react'] }).code;
                 // Execute the transpiled code
                 eval(transpiledCode);
             } catch (syntaxError) {
                 console.error('Syntax error in component code:', syntaxError);
-                const ErrorDisplay = () => (
-                    <div className="error-boundary">
-                        <div className="error-title">
-                            <span>❌</span>
-                            <span>Syntax Error</span>
-                        </div>
-                        <div className="error-message">
-                            <strong>Error:</strong> {syntaxError.message}
-                        </div>
-                    </div>
-                );
+                const ErrorDisplay = () => {
+                    if (typeof React === 'undefined') {
+                        return null;
+                    }
+                    return React.createElement('div', {className: 'error-boundary'},
+                        React.createElement('div', {className: 'error-title'},
+                            React.createElement('span', {}, '❌'),
+                            React.createElement('span', {}, 'Syntax Error')
+                        ),
+                        React.createElement('div', {className: 'error-message'},
+                            React.createElement('strong', {}, 'Error:'),
+                            React.createElement('span', {}, syntaxError.message)
+                        )
+                    );
+                };
                 window.UserComponent = ErrorDisplay;
             }
         })();
@@ -1105,12 +1152,21 @@ function generateAdvancedPreviewHTML(code, analysis, options = {}) {
         const renderComponent = async () => {
             await waitForReact();
             
+            // Ensure ReactDOM is also available
+            if (typeof ReactDOM === 'undefined') {
+                console.error('ReactDOM is not available');
+                return;
+            }
+            
             const root = ReactDOM.createRoot(document.getElementById('root'));
             
             // Simple wrapper using createElement to avoid React availability issues
             const PreviewWrapper = () => {
                 const ComponentToRender = window.UserComponent || ${componentName};
-                return createElement(ComponentToRender);
+                if (!ComponentToRender) {
+                    return React.createElement('div', { style: { color: 'red', padding: '1rem' } }, 'Component not found');
+                }
+                return React.createElement(ComponentToRender);
             };
             
             // Start performance monitoring
@@ -1132,22 +1188,22 @@ function generateAdvancedPreviewHTML(code, analysis, options = {}) {
             
             try {
                 root.render(
-                    createElement(ErrorBoundary, {key: Date.now()},
-                        createElement(PreviewWrapper)
+                    React.createElement(ErrorBoundary, {key: Date.now()},
+                        React.createElement(PreviewWrapper)
                     )
                 );
             } catch (renderError) {
                 console.error('Render error:', renderError);
                 endRenderTimer();
                 root.render(
-                    createElement('div', {className: 'error-boundary'},
-                        createElement('div', {className: 'error-title'},
-                            createElement('span', {}, '💥'),
-                            createElement('span', {}, 'Render Error')
+                    React.createElement('div', {className: 'error-boundary'},
+                        React.createElement('div', {className: 'error-title'},
+                            React.createElement('span', {}, '💥'),
+                            React.createElement('span', {}, 'Render Error')
                         ),
-                        createElement('div', {className: 'error-message'},
-                            createElement('strong', {}, 'Error:'),
-                            createElement('span', {}, renderError.message)
+                        React.createElement('div', {className: 'error-message'},
+                            React.createElement('strong', {}, 'Error:'),
+                            React.createElement('span', {}, renderError.message)
                         )
                     )
                 );
@@ -1155,7 +1211,25 @@ function generateAdvancedPreviewHTML(code, analysis, options = {}) {
         };
         
         // Start rendering after components are initialized
-        renderComponent();
+        // Add a small delay to ensure all scripts are loaded
+        setTimeout(async () => {
+            try {
+                await renderComponent();
+            } catch (error) {
+                console.error('Failed to render component:', error);
+                // Show a fallback error message
+                const root = document.getElementById('root');
+                if (root) {
+                    root.innerHTML = \`
+                        <div style="padding: 2rem; text-align: center; color: #dc2626;">
+                            <h3>⚠️ Preview Error</h3>
+                            <p>Failed to load React preview. Please check your component code.</p>
+                            <p style="font-size: 0.875rem; color: #6b7280;">Error: \${error.message}</p>
+                        </div>
+                    \`;
+                }
+            }
+        }, 100);
     </script>
 </body>
 </html>`;
