@@ -697,12 +697,24 @@ function generateAdvancedPreviewHTML(code, analysis, options = {}) {
                 console.error('React is not loaded');
                 return false;
             }
+            if (typeof React.createElement === 'undefined') {
+                console.error('React.createElement is not available');
+                return false;
+            }
             if (typeof ReactDOM === 'undefined') {
                 console.error('ReactDOM is not loaded');
                 return false;
             }
+            if (typeof ReactDOM.createRoot === 'undefined') {
+                console.error('ReactDOM.createRoot is not available');
+                return false;
+            }
             if (typeof Babel === 'undefined') {
                 console.error('Babel is not loaded');
+                return false;
+            }
+            if (typeof Babel.transform === 'undefined') {
+                console.error('Babel.transform is not available');
                 return false;
             }
             return true;
@@ -870,9 +882,18 @@ function generateAdvancedPreviewHTML(code, analysis, options = {}) {
         // Mock common React libraries for preview
         const mockLibraries = {
             'react-router-dom': {
-                BrowserRouter: ({children}) => React.createElement('div', {}, children),
-                Route: ({children}) => React.createElement('div', {}, children),
-                Link: ({children, to, ...props}) => React.createElement('a', {href: to, ...props}, children),
+                BrowserRouter: ({children}) => {
+                    if (typeof React === 'undefined') return null;
+                    return React.createElement('div', {}, children);
+                },
+                Route: ({children}) => {
+                    if (typeof React === 'undefined') return null;
+                    return React.createElement('div', {}, children);
+                },
+                Link: ({children, to, ...props}) => {
+                    if (typeof React === 'undefined') return null;
+                    return React.createElement('a', {href: to, ...props}, children);
+                },
                 useNavigate: () => (path) => console.log('Navigate to:', path),
                 useParams: () => ({}),
                 useLocation: () => ({pathname: '/', search: '', hash: ''})
@@ -885,23 +906,74 @@ function generateAdvancedPreviewHTML(code, analysis, options = {}) {
             
             // Mock common components that might be missing
             const mockComponents = {
-                Header: () => React.createElement('header', {style: {padding: '1rem', background: '#f3f4f6'}}, 'Header Component'),
-                Footer: () => React.createElement('footer', {style: {padding: '1rem', background: '#f3f4f6'}}, 'Footer Component'),
-                Sidebar: () => React.createElement('aside', {style: {padding: '1rem', background: '#e5e7eb'}}, 'Sidebar Component'),
-                Navigation: () => React.createElement('nav', {style: {padding: '1rem', background: '#d1d5db'}}, 'Navigation Component'),
-                Layout: ({children}) => React.createElement('div', {style: {display: 'flex', flexDirection: 'column', minHeight: '100vh'}}, children),
-                Container: ({children}) => React.createElement('div', {style: {maxWidth: '1200px', margin: '0 auto', padding: '0 1rem'}}, children),
-                Button: ({children, ...props}) => React.createElement('button', {style: {padding: '8px 16px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer'}, ...props}, children),
-                Card: ({children, ...props}) => React.createElement('div', {style: {padding: '1rem', border: '1px solid #e5e7eb', borderRadius: '8px', background: 'white'}, ...props}, children),
-                Input: ({...props}) => React.createElement('input', {style: {padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: '4px', width: '100%'}, ...props}),
-                Text: ({children, ...props}) => React.createElement('p', {style: {margin: '0'}, ...props}, children),
-                Title: ({children, ...props}) => React.createElement('h1', {style: {margin: '0 0 1rem 0', fontSize: '1.5rem', fontWeight: 'bold'}, ...props}, children),
-                Subtitle: ({children, ...props}) => React.createElement('h2', {style: {margin: '0 0 0.5rem 0', fontSize: '1.25rem', fontWeight: '600'}, ...props}, children),
-                Div: ({children, ...props}) => React.createElement('div', props, children),
-                Span: ({children, ...props}) => React.createElement('span', props, children),
-                Image: ({src, alt, ...props}) => React.createElement('img', {src, alt, style: {maxWidth: '100%', height: 'auto'}, ...props}),
-                List: ({children, ...props}) => React.createElement('ul', {style: {margin: '0', padding: '0 0 0 1.5rem'}, ...props}, children),
-                ListItem: ({children, ...props}) => React.createElement('li', {style: {margin: '0.25rem 0'}, ...props}, children),
+                Header: () => {
+                    if (typeof React === 'undefined') return null;
+                    return React.createElement('header', {style: {padding: '1rem', background: '#f3f4f6'}}, 'Header Component');
+                },
+                Footer: () => {
+                    if (typeof React === 'undefined') return null;
+                    return React.createElement('footer', {style: {padding: '1rem', background: '#f3f4f6'}}, 'Footer Component');
+                },
+                Sidebar: () => {
+                    if (typeof React === 'undefined') return null;
+                    return React.createElement('aside', {style: {padding: '1rem', background: '#e5e7eb'}}, 'Sidebar Component');
+                },
+                Navigation: () => {
+                    if (typeof React === 'undefined') return null;
+                    return React.createElement('nav', {style: {padding: '1rem', background: '#d1d5db'}}, 'Navigation Component');
+                },
+                Layout: ({children}) => {
+                    if (typeof React === 'undefined') return null;
+                    return React.createElement('div', {style: {display: 'flex', flexDirection: 'column', minHeight: '100vh'}}, children);
+                },
+                Container: ({children}) => {
+                    if (typeof React === 'undefined') return null;
+                    return React.createElement('div', {style: {maxWidth: '1200px', margin: '0 auto', padding: '0 1rem'}}, children);
+                },
+                Button: ({children, ...props}) => {
+                    if (typeof React === 'undefined') return null;
+                    return React.createElement('button', {style: {padding: '8px 16px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer'}, ...props}, children);
+                },
+                Card: ({children, ...props}) => {
+                    if (typeof React === 'undefined') return null;
+                    return React.createElement('div', {style: {padding: '1rem', border: '1px solid #e5e7eb', borderRadius: '8px', background: 'white'}, ...props}, children);
+                },
+                Input: ({...props}) => {
+                    if (typeof React === 'undefined') return null;
+                    return React.createElement('input', {style: {padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: '4px', width: '100%'}, ...props});
+                },
+                Text: ({children, ...props}) => {
+                    if (typeof React === 'undefined') return null;
+                    return React.createElement('p', {style: {margin: '0'}, ...props}, children);
+                },
+                Title: ({children, ...props}) => {
+                    if (typeof React === 'undefined') return null;
+                    return React.createElement('h1', {style: {margin: '0 0 1rem 0', fontSize: '1.5rem', fontWeight: 'bold'}, ...props}, children);
+                },
+                Subtitle: ({children, ...props}) => {
+                    if (typeof React === 'undefined') return null;
+                    return React.createElement('h2', {style: {margin: '0 0 0.5rem 0', fontSize: '1.25rem', fontWeight: '600'}, ...props}, children);
+                },
+                Div: ({children, ...props}) => {
+                    if (typeof React === 'undefined') return null;
+                    return React.createElement('div', props, children);
+                },
+                Span: ({children, ...props}) => {
+                    if (typeof React === 'undefined') return null;
+                    return React.createElement('span', props, children);
+                },
+                Image: ({src, alt, ...props}) => {
+                    if (typeof React === 'undefined') return null;
+                    return React.createElement('img', {src, alt, style: {maxWidth: '100%', height: 'auto'}, ...props});
+                },
+                List: ({children, ...props}) => {
+                    if (typeof React === 'undefined') return null;
+                    return React.createElement('ul', {style: {margin: '0', padding: '0 0 0 1.5rem'}, ...props}, children);
+                },
+                ListItem: ({children, ...props}) => {
+                    if (typeof React === 'undefined') return null;
+                    return React.createElement('li', {style: {margin: '0.25rem 0'}, ...props}, children);
+                },
                             // Basic utility components only - everything else will be created dynamically
             };
 
@@ -988,9 +1060,34 @@ function generateAdvancedPreviewHTML(code, analysis, options = {}) {
 
         // Initialize components and process user code
         (async () => {
+            // Wait for DOM to be ready
+            if (document.readyState !== 'complete') {
+                await new Promise(resolve => {
+                    window.addEventListener('load', resolve);
+                });
+            }
+            
             // Wait for all dependencies to be available
-            while (!checkDependencies()) {
+            let attempts = 0;
+            const maxAttempts = 50; // 5 seconds max wait
+            
+            while (!checkDependencies() && attempts < maxAttempts) {
                 await new Promise(resolve => setTimeout(resolve, 100));
+                attempts++;
+            }
+            
+            if (attempts >= maxAttempts) {
+                console.error('Failed to load dependencies after 5 seconds');
+                const root = document.getElementById('root');
+                if (root) {
+                    root.innerHTML = \`
+                        <div style="padding: 2rem; text-align: center; color: #dc2626;">
+                            <h3>⚠️ Loading Error</h3>
+                            <p>Failed to load React dependencies. Please refresh the page.</p>
+                        </div>
+                    \`;
+                }
+                return;
             }
             
             // Wait for React to be available first
@@ -1124,6 +1221,9 @@ function generateAdvancedPreviewHTML(code, analysis, options = {}) {
                 if (typeof Babel === 'undefined') {
                     throw new Error('Babel is not available for JSX transformation');
                 }
+                if (typeof Babel.transform === 'undefined') {
+                    throw new Error('Babel.transform is not available');
+                }
                 const transpiledCode = Babel.transform(processedCode, { presets: ['react'] }).code;
                 // Execute the transpiled code
                 eval(transpiledCode);
@@ -1155,6 +1255,11 @@ function generateAdvancedPreviewHTML(code, analysis, options = {}) {
             // Ensure ReactDOM is also available
             if (typeof ReactDOM === 'undefined') {
                 console.error('ReactDOM is not available');
+                return;
+            }
+            
+            if (typeof ReactDOM.createRoot === 'undefined') {
+                console.error('ReactDOM.createRoot is not available');
                 return;
             }
             
