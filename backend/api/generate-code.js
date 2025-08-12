@@ -135,8 +135,15 @@ Requirements:
 - Make components responsive and strictly accessible (WCAG 2.1 AA)
 - Prefer TypeScript (.tsx/.ts) files where possible
 
+IMPORTANT: The package.json MUST include ALL necessary dependencies:
+- react, react-dom, react-scripts (core React)
+- react-router-dom (for navigation if multiple screens)
+- react-syntax-highlighter, react-live (for code display)
+- js-cookie, axios (for API calls and cookies)
+- All necessary dev dependencies including TypeScript types
+
 Generate the following structure:
-- package.json with all required dependencies
+- package.json with ALL required dependencies (this is critical!)
 - public/index.html
 - src/index.tsx (entry point)
 - src/index.css (Tailwind imports)
@@ -187,28 +194,234 @@ Respond with a single JSON object: { manifest, files: { path: content, ... } }`;
     let { files: generatedFiles, manifest } = parsed;
     if (!generatedFiles || typeof generatedFiles !== 'object') generatedFiles = {};
 
-    // Ensure minimum required files exist
-    if (!generatedFiles['package.json']) {
-      generatedFiles['package.json'] = JSON.stringify({
-        name: 'generated-react-app',
-        version: '0.1.0',
-        private: true,
-        dependencies: {
-          react: '^18.2.0',
-          'react-dom': '^18.2.0',
-          'react-scripts': '5.0.1'
-        },
-        devDependencies: {
-          tailwindcss: '^3.4.1',
-          postcss: '^8.4.38',
-          autoprefixer: '^10.4.19'
-        },
-        scripts: {
-          start: 'react-scripts start',
-          build: 'react-scripts build',
-          test: 'react-scripts test'
+    // Validate and ensure package.json has required dependencies
+    const validatePackageJson = (packageJsonContent) => {
+      try {
+        const pkg = JSON.parse(packageJsonContent);
+        const requiredDeps = ['react', 'react-dom'];
+        const missingDeps = requiredDeps.filter(dep => !pkg.dependencies || !pkg.dependencies[dep]);
+        
+        if (missingDeps.length > 0) {
+          console.warn(`Generated package.json missing required dependencies: ${missingDeps.join(', ')}`);
+          return false;
         }
-      }, null, 2);
+        return true;
+      } catch (error) {
+        console.error('Invalid package.json format:', error);
+        return false;
+      }
+    };
+
+    // Ensure minimum required files exist
+    if (!generatedFiles['package.json'] || !validatePackageJson(generatedFiles['package.json'])) {
+      // If package.json exists but is missing dependencies, enhance it
+      if (generatedFiles['package.json'] && validatePackageJson(generatedFiles['package.json']) === false) {
+        try {
+          const existingPkg = JSON.parse(generatedFiles['package.json']);
+          const enhancedPkg = {
+            ...existingPkg,
+            dependencies: {
+              ...existingPkg.dependencies,
+              react: existingPkg.dependencies?.react || '^18.2.0',
+              'react-dom': existingPkg.dependencies?.['react-dom'] || '^18.2.0',
+              'react-scripts': existingPkg.dependencies?.['react-scripts'] || '5.0.1',
+              'react-router-dom': existingPkg.dependencies?.['react-router-dom'] || '^6.8.0',
+              'react-syntax-highlighter': existingPkg.dependencies?.['react-syntax-highlighter'] || '^15.5.0',
+              'react-live': existingPkg.dependencies?.['react-live'] || '^4.0.3',
+              'js-cookie': existingPkg.dependencies?.['js-cookie'] || '^3.0.5',
+              'axios': existingPkg.dependencies?.axios || '^1.6.0'
+            },
+            devDependencies: {
+              ...existingPkg.devDependencies,
+              tailwindcss: existingPkg.devDependencies?.tailwindcss || '^3.4.1',
+              postcss: existingPkg.devDependencies?.postcss || '^8.4.38',
+              autoprefixer: existingPkg.devDependencies?.autoprefixer || '^10.4.19',
+              '@types/react': existingPkg.devDependencies?.['@types/react'] || '^18.2.0',
+              '@types/react-dom': existingPkg.devDependencies?.['@types/react-dom'] || '^18.2.0',
+              '@types/react-syntax-highlighter': existingPkg.devDependencies?.['@types/react-syntax-highlighter'] || '^15.5.0',
+              'typescript': existingPkg.devDependencies?.typescript || '^5.0.0',
+              '@types/node': existingPkg.devDependencies?.['@types/node'] || '^20.0.0'
+            }
+          };
+          
+          // Ensure scripts exist
+          if (!enhancedPkg.scripts) {
+            enhancedPkg.scripts = {
+              start: 'react-scripts start',
+              build: 'react-scripts build',
+              test: 'react-scripts test',
+              eject: 'react-scripts eject'
+            };
+          }
+          
+          // Ensure browserslist exists
+          if (!enhancedPkg.browserslist) {
+            enhancedPkg.browserslist = {
+              production: [
+                ">0.2%",
+                "not dead",
+                "not op_mini all"
+              ],
+              development: [
+                "last 1 chrome version",
+                "last 1 firefox version",
+                "last 1 safari version"
+              ]
+            };
+          }
+          
+          generatedFiles['package.json'] = JSON.stringify(enhancedPkg, null, 2);
+          console.log('Enhanced existing package.json with missing dependencies');
+        } catch (error) {
+          console.error('Failed to enhance existing package.json:', error);
+          // Fall back to creating a new one
+          generatedFiles['package.json'] = JSON.stringify({
+            name: 'generated-react-app',
+            version: '0.1.0',
+            private: true,
+            dependencies: {
+              react: '^18.2.0',
+              'react-dom': '^18.2.0',
+              'react-scripts': '5.0.1',
+              'react-router-dom': '^6.8.0',
+              'react-syntax-highlighter': '^15.5.0',
+              'react-live': '^4.0.3',
+              'js-cookie': '^3.0.5',
+              'axios': '^1.6.0'
+            },
+            devDependencies: {
+              tailwindcss: '^3.4.1',
+              postcss: '^8.4.38',
+              autoprefixer: '^10.4.19',
+              '@types/react': '^18.2.0',
+              '@types/react-dom': '^18.2.0',
+              '@types/react-syntax-highlighter': '^15.5.0',
+              'typescript': '^5.0.0',
+              '@types/node': '^20.0.0'
+            },
+            scripts: {
+              start: 'react-scripts start',
+              build: 'react-scripts build',
+              test: 'react-scripts test',
+              eject: 'react-scripts eject'
+            },
+            browserslist: {
+              production: [
+                ">0.2%",
+                "not dead",
+                "not op_mini all"
+              ],
+              development: [
+                "last 1 chrome version",
+                "last 1 firefox version",
+                "last 1 safari version"
+              ]
+            }
+          }, null, 2);
+        }
+      } else {
+        // Create new package.json if none exists
+        generatedFiles['package.json'] = JSON.stringify({
+          name: 'generated-react-app',
+          version: '0.1.0',
+          private: true,
+          dependencies: {
+            react: '^18.2.0',
+            'react-dom': '^18.2.0',
+            'react-scripts': '5.0.1',
+            'react-router-dom': '^6.8.0',
+            'react-syntax-highlighter': '^15.5.0',
+            'react-live': '^4.0.3',
+            'js-cookie': '^3.0.5',
+            'axios': '^1.6.0'
+          },
+          devDependencies: {
+            tailwindcss: '^3.4.1',
+            postcss: '^8.4.38',
+            autoprefixer: '^10.4.19',
+            '@types/react': '^18.2.0',
+            '@types/react-dom': '^18.2.0',
+            '@types/react-syntax-highlighter': '^15.5.0',
+            'typescript': '^5.0.0',
+            '@types/node': '^20.0.0'
+          },
+          scripts: {
+            start: 'react-scripts start',
+            build: 'react-scripts build',
+            test: 'react-scripts test',
+            eject: 'react-scripts eject'
+          },
+          browserslist: {
+            production: [
+              ">0.2%",
+              "not dead",
+              "not op_mini all"
+            ],
+            development: [
+              "last 1 chrome version",
+              "last 1 firefox version",
+              "last 1 safari version"
+            ]
+          }
+        }, null, 2);
+      }
+    }
+
+    // Post-process generated files to ensure proper React imports
+    const ensureReactImports = (content, filePath) => {
+      if (filePath.endsWith('.jsx') || filePath.endsWith('.tsx') || filePath.endsWith('.js') || filePath.endsWith('.ts')) {
+        // Ensure React is imported if JSX is used
+        if (content.includes('JSX') || content.includes('<') && content.includes('>')) {
+          if (!content.includes('import React') && !content.includes('from \'react\'')) {
+            content = 'import React from \'react\';\n\n' + content;
+          }
+        }
+      }
+      return content;
+    };
+
+    // Apply post-processing to all generated files
+    Object.keys(generatedFiles).forEach(filePath => {
+      if (typeof generatedFiles[filePath] === 'string') {
+        generatedFiles[filePath] = ensureReactImports(generatedFiles[filePath], filePath);
+      }
+    });
+
+    // Validate that critical files have proper content
+    const criticalFiles = ['src/index.js', 'src/index.tsx', 'src/App.js', 'src/App.tsx', 'src/App.jsx'];
+    const hasValidEntryPoint = criticalFiles.some(file => {
+      const content = generatedFiles[file];
+      return content && (
+        content.includes('ReactDOM.createRoot') || 
+        content.includes('ReactDOM.render') ||
+        content.includes('App')
+      );
+    });
+
+    if (!hasValidEntryPoint) {
+      console.warn('Generated files missing valid React entry point, creating fallback...');
+      if (!generatedFiles['src/index.js']) {
+        generatedFiles['src/index.js'] = `import React from 'react';
+import ReactDOM from 'react-dom/client';
+import App from './App';
+import './index.css';
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+);`;
+      }
+    }
+
+    // Final validation of package.json
+    try {
+      const finalPackageJson = JSON.parse(generatedFiles['package.json']);
+      console.log('Final package.json dependencies:', Object.keys(finalPackageJson.dependencies || {}));
+      console.log('Final package.json devDependencies:', Object.keys(finalPackageJson.devDependencies || {}));
+    } catch (error) {
+      console.error('Final package.json validation failed:', error);
     }
 
     // Ensure other required files
