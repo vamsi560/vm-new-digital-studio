@@ -422,9 +422,152 @@ function generateAdvancedPreviewHTML(code, analysis, options = {}) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${componentName} - Live Preview</title>
-    <script src="https://unpkg.com/react@19/umd/react.development.js"></script>
-    <script src="https://unpkg.com/react-dom@19/umd/react-dom.development.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- 
+    Note: This preview is designed to run in a sandboxed iframe.
+    The sandbox attribute should include 'allow-scripts' but NOT 'allow-same-origin'
+    to prevent sandbox escape vulnerabilities.
+    -->
+    <script>
+        // Enhanced script loading with multiple fallback strategies
+        window.scriptStatus = {
+            react: false,
+            reactDom: false,
+            babel: false
+        };
+        
+        // Update loading status and progress
+        const updateLoadingStatus = (status, progress) => {
+            const statusEl = document.getElementById('loading-status');
+            const progressBar = document.getElementById('progress-bar');
+            if (statusEl) statusEl.textContent = status;
+            if (progressBar) progressBar.style.width = progress + '%';
+        };
+        
+        // Multiple CDN sources for redundancy
+        const CDN_SOURCES = {
+            react: [
+                'https://unpkg.com/react@18/umd/react.development.js',
+                'https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.development.js',
+                'https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.development.js'
+            ],
+            reactDom: [
+                'https://unpkg.com/react-dom@18/umd/react-dom.development.js',
+                'https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.development.js',
+                'https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.development.js'
+            ],
+            babel: [
+                'https://unpkg.com/@babel/standalone/babel.min.js',
+                'https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.22.0/babel.min.js',
+                'https://cdn.jsdelivr.net/npm/@babel/standalone@7.22.0/babel.min.js'
+            ]
+        };
+        
+        let currentCDNIndex = { react: 0, reactDom: 0, babel: 0 };
+        
+        // Load script with fallback
+        const loadScriptWithFallback = (type, onSuccess, onError) => {
+            const loadScript = (index) => {
+                if (index >= CDN_SOURCES[type].length) {
+                    onError(new Error(\`All CDN sources failed for \${type}\`));
+                    return;
+                }
+                
+                const script = document.createElement('script');
+                script.src = CDN_SOURCES[type][index];
+                script.crossOrigin = 'anonymous';
+                
+                script.onload = () => {
+                    console.log(\`\${type} loaded successfully from \${CDN_SOURCES[type][index]}\`);
+                    window.scriptStatus[type] = true;
+                    onSuccess();
+                };
+                
+                script.onerror = () => {
+                    console.warn(\`Failed to load \${type} from \${CDN_SOURCES[type][index]}, trying next CDN...\`);
+                    currentCDNIndex[type]++;
+                    loadScript(currentCDNIndex[type]);
+                };
+                
+                document.head.appendChild(script);
+            };
+            
+            loadScript(currentCDNIndex[type]);
+        };
+        
+        // Script load event handlers
+        window.onReactLoad = () => {
+            console.log('React loaded successfully');
+            window.scriptStatus.react = true;
+            updateLoadingStatus('React loaded ✓', 33);
+        };
+        
+        window.onReactDomLoad = () => {
+            console.log('ReactDOM loaded successfully');
+            window.scriptStatus.reactDom = true;
+            updateLoadingStatus('ReactDOM loaded ✓', 66);
+        };
+        
+        window.onBabelLoad = () => {
+            console.log('Babel loaded successfully');
+            window.scriptStatus.babel = true;
+            updateLoadingStatus('Babel loaded ✓', 100);
+        };
+        
+        // Script error handlers with fallback
+        window.onReactError = () => {
+            console.error('Failed to load React script, trying fallback...');
+            loadScriptWithFallback('react', window.onReactLoad, () => {
+                window.scriptStatus.react = 'error';
+                updateLoadingStatus('React failed to load ✗', 0);
+            });
+        };
+        
+        window.onReactDomError = () => {
+            console.error('Failed to load ReactDOM script, trying fallback...');
+            loadScriptWithFallback('reactDom', window.onReactDomLoad, () => {
+                window.scriptStatus.reactDom = 'error';
+                updateLoadingStatus('ReactDOM failed to load ✗', 33);
+            });
+        };
+        
+        window.onBabelError = () => {
+            console.error('Failed to load Babel script, trying fallback...');
+            loadScriptWithFallback('babel', window.onBabelLoad, () => {
+                window.scriptStatus.babel = 'error';
+                updateLoadingStatus('Babel failed to load ✗', 66);
+            });
+        };
+        
+        // Add timeout for script loading
+        setTimeout(() => {
+            if (!window.scriptStatus.react || !window.scriptStatus.reactDom || !window.scriptStatus.babel) {
+                console.warn('Script loading timeout - trying fallback CDNs...');
+                // Mark unloaded scripts as timed out and try fallbacks
+                if (!window.scriptStatus.react) {
+                    window.scriptStatus.react = 'timeout';
+                    loadScriptWithFallback('react', window.onReactLoad, () => {
+                        window.scriptStatus.react = 'error';
+                    });
+                }
+                if (!window.scriptStatus.reactDom) {
+                    window.scriptStatus.reactDom = 'timeout';
+                    loadScriptWithFallback('reactDom', window.onReactDomLoad, () => {
+                        window.scriptStatus.reactDom = 'error';
+                    });
+                }
+                if (!window.scriptStatus.babel) {
+                    window.scriptStatus.babel = 'timeout';
+                    loadScriptWithFallback('babel', window.onBabelLoad, () => {
+                        window.scriptStatus.babel = 'error';
+                    });
+                }
+            }
+        }, 5000); // 5 second timeout
+    </script>
+    
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin onload="window.onReactLoad()" onerror="window.onReactError()"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin onload="window.onReactDomLoad()" onerror="window.onReactDomError()"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js" crossorigin onload="window.onBabelLoad()" onerror="window.onBabelError()"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         * { box-sizing: border-box; }
@@ -686,38 +829,169 @@ function generateAdvancedPreviewHTML(code, analysis, options = {}) {
             <div class="loading">
                 <div class="loading-spinner"></div>
                 <span>Loading preview...</span>
+                <div style="margin-top: 1rem; font-size: 0.875rem; color: #9ca3af;">
+                    <div id="loading-status">Initializing...</div>
+                    <div id="loading-progress" style="margin-top: 0.5rem;">
+                        <div style="background: #e5e7eb; height: 4px; border-radius: 2px; overflow: hidden;">
+                            <div id="progress-bar" style="background: #3b82f6; height: 100%; width: 0%; transition: width 0.3s ease;"></div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
     
     <script type="text/babel">
-        // Ensure all dependencies are loaded before running
+        // Enhanced dependency loading with proper event handling
+        let dependenciesLoaded = false;
+        let loadAttempts = 0;
+        const maxLoadAttempts = 100; // 10 seconds max wait
+        
+        // Suppress production warnings for development preview
+        console.log('🔧 Live Preview Mode - Development Environment');
+        console.log('⚠️  Note: This is a development preview. Production warnings are expected.');
+        console.log('📚 Using CDN versions of React, ReactDOM, and Babel for live preview.');
+        
         const checkDependencies = () => {
+            // Check script loading status first
+            if (!window.scriptStatus) {
+                console.log('Script status not available yet...');
+                return false;
+            }
+            
+            // Check for error and timeout states
+            if (window.scriptStatus.react === 'error' || window.scriptStatus.react === 'timeout') {
+                console.error('React script failed to load or timed out');
+                return false;
+            }
+            if (window.scriptStatus.reactDom === 'error' || window.scriptStatus.reactDom === 'timeout') {
+                console.error('ReactDOM script failed to load or timed out');
+                return false;
+            }
+            if (window.scriptStatus.babel === 'error' || window.scriptStatus.babel === 'timeout') {
+                console.error('Babel script failed to load or timed out');
+                return false;
+            }
+            
+            if (!window.scriptStatus.react) {
+                console.log('Waiting for React script to load...');
+                return false;
+            }
+            
+            if (!window.scriptStatus.reactDom) {
+                console.log('Waiting for ReactDOM script to load...');
+                return false;
+            }
+            
+            if (!window.scriptStatus.babel) {
+                console.log('Waiting for Babel script to load...');
+                return false;
+            }
+            
+            // Now check if the actual objects are available
             if (typeof React === 'undefined') {
-                console.error('React is not loaded');
+                console.log('Waiting for React object to be available...');
                 return false;
             }
             if (typeof React.createElement === 'undefined') {
-                console.error('React.createElement is not available');
+                console.log('Waiting for React.createElement...');
                 return false;
             }
             if (typeof ReactDOM === 'undefined') {
-                console.error('ReactDOM is not loaded');
+                console.log('Waiting for ReactDOM object to be available...');
                 return false;
             }
             if (typeof ReactDOM.createRoot === 'undefined') {
-                console.error('ReactDOM.createRoot is not available');
+                console.log('Waiting for ReactDOM.createRoot...');
                 return false;
             }
             if (typeof Babel === 'undefined') {
-                console.error('Babel is not loaded');
+                console.log('Waiting for Babel object to be available...');
                 return false;
             }
             if (typeof Babel.transform === 'undefined') {
-                console.error('Babel.transform is not available');
+                console.log('Waiting for Babel.transform...');
                 return false;
             }
+            
+            // Additional safety check: ensure React is globally available
+            if (typeof window.React === 'undefined') {
+                window.React = React;
+                console.log('Made React globally available');
+            }
+            if (typeof window.ReactDOM === 'undefined') {
+                window.ReactDOM = ReactDOM;
+                console.log('Made ReactDOM globally available');
+            }
+            if (typeof window.Babel === 'undefined') {
+                window.Babel = Babel;
+                console.log('Made Babel globally available');
+            }
+            
+            console.log('All dependencies loaded successfully!');
+            dependenciesLoaded = true;
             return true;
+        };
+        
+                // Wait for all dependencies to be available
+        const waitForDependencies = () => {
+            return new Promise((resolve, reject) => {
+                const checkInterval = setInterval(() => {
+                    loadAttempts++;
+                    
+                    if (checkDependencies()) {
+                        clearInterval(checkInterval);
+                        updateLoadingStatus('All dependencies ready ✓', 100);
+                        resolve();
+                    } else if (loadAttempts >= maxLoadAttempts) {
+                        clearInterval(checkInterval);
+                        const error = new Error('Failed to load dependencies after 10 seconds');
+                        console.error('Dependency loading failed:', error);
+                        
+                        // Try one more time with a different approach
+                        console.log('Attempting emergency React loading...');
+                        const emergencyScript = document.createElement('script');
+                        emergencyScript.textContent = \`
+                            if (typeof React === 'undefined') {
+                                console.log('Loading React from emergency source...');
+                                const script = document.createElement('script');
+                                script.src = 'https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.development.js';
+                                script.onload = () => {
+                                    console.log('Emergency React loaded!');
+                                    if (typeof React !== 'undefined') {
+                                        window.React = React;
+                                        location.reload();
+                                    }
+                                };
+                                document.head.appendChild(script);
+                            }
+                        \`;
+                        document.head.appendChild(emergencyScript);
+                        
+                        // Show user-friendly error message
+                        const root = document.getElementById('root');
+                        if (root) {
+                            root.innerHTML = \`
+                                <div style="padding: 2rem; text-align: center; color: #dc2626;">
+                                    <h3>⚠️ Script Loading Error</h3>
+                                    <p>Failed to load React dependencies. This might be due to:</p>
+                                    <ul style="text-align: left; display: inline-block; margin: 1rem 0;">
+                                        <li>Network connectivity issues</li>
+                                        <li>CDN availability problems</li>
+                                        <li>Browser security restrictions</li>
+                                    </ul>
+                                    <p style="margin-top: 1rem; color: #059669;">Attempting emergency recovery...</p>
+                                    <button onclick="location.reload()" style="margin-top: 1rem; padding: 0.5rem 1rem; background: #dc2626; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                                        🔄 Retry Loading
+                                    </button>
+                                </div>
+                            \`;
+                        }
+                        
+                        reject(error);
+                    }
+                }, 100);
+            });
         };
 
         // Performance monitoring
@@ -991,9 +1265,38 @@ function generateAdvancedPreviewHTML(code, analysis, options = {}) {
             return mockComponents;
         };
 
-        // Enhanced global error handler with dynamic component creation
+        // Enhanced global error handler with dynamic component creation and React recovery
         window.addEventListener('error', async (event) => {
             console.error('Global error:', event.error);
+            
+            // Check if it's a React not defined error
+            if (event.error && event.error.message && event.error.message.includes('React is not defined')) {
+                console.error('React not defined error detected, attempting recovery...');
+                
+                // Try to load React from a different source
+                const recoveryScript = document.createElement('script');
+                recoveryScript.textContent = \`
+                    console.log('Attempting React recovery from global error handler...');
+                    if (typeof React === 'undefined') {
+                        const script = document.createElement('script');
+                        script.src = 'https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.development.js';
+                        script.onload = () => {
+                            console.log('Recovery React loaded from global error handler!');
+                            if (typeof React !== 'undefined') {
+                                window.React = React;
+                                location.reload();
+                            }
+                        };
+                        document.head.appendChild(script);
+                    }
+                \`;
+                document.head.appendChild(recoveryScript);
+                
+                // Prevent the error from propagating
+                event.preventDefault();
+                event.stopPropagation();
+                return false;
+            }
             
             // Check if it's a component not defined error
             if (event.error && event.error.message && event.error.message.includes('is not defined')) {
@@ -1060,41 +1363,33 @@ function generateAdvancedPreviewHTML(code, analysis, options = {}) {
 
         // Initialize components and process user code
         (async () => {
-            // Wait for DOM to be ready
-            if (document.readyState !== 'complete') {
-                await new Promise(resolve => {
-                    window.addEventListener('load', resolve);
-                });
-            }
-            
-            // Wait for all dependencies to be available
-            let attempts = 0;
-            const maxAttempts = 50; // 5 seconds max wait
-            
-            while (!checkDependencies() && attempts < maxAttempts) {
-                await new Promise(resolve => setTimeout(resolve, 100));
-                attempts++;
-            }
-            
-            if (attempts >= maxAttempts) {
-                console.error('Failed to load dependencies after 5 seconds');
-                const root = document.getElementById('root');
-                if (root) {
-                    root.innerHTML = \`
-                        <div style="padding: 2rem; text-align: center; color: #dc2626;">
-                            <h3>⚠️ Loading Error</h3>
-                            <p>Failed to load React dependencies. Please refresh the page.</p>
-                        </div>
-                    \`;
+            try {
+                console.log('Starting component initialization...');
+                
+                // Wait for DOM to be ready
+                if (document.readyState !== 'complete') {
+                    console.log('Waiting for DOM to be complete...');
+                    await new Promise(resolve => {
+                        window.addEventListener('load', resolve);
+                    });
                 }
-                return;
-            }
-            
-            // Wait for React to be available first
-            await waitForReact();
-            
-            // Initialize base components
-            const mockComponents = await initializeComponents();
+                
+                console.log('DOM ready, waiting for dependencies...');
+                
+                // Wait for all dependencies to be available using the improved function
+                await waitForDependencies();
+                
+                // Double-check React availability
+                if (typeof React === 'undefined' || typeof React.createElement === 'undefined') {
+                    throw new Error('React is still not available after dependency loading');
+                }
+                
+                console.log('Dependencies loaded, initializing components...');
+                console.log('React version:', React.version);
+                console.log('ReactDOM version:', ReactDOM.version);
+                
+                // Initialize base components
+                const mockComponents = await initializeComponents();
             
             // User's component code (with error handling)
             // Process the code to handle imports properly
@@ -1319,9 +1614,36 @@ function generateAdvancedPreviewHTML(code, analysis, options = {}) {
         // Add a small delay to ensure all scripts are loaded
         setTimeout(async () => {
             try {
+                console.log('Starting component rendering...');
                 await renderComponent();
+                console.log('Component rendered successfully!');
             } catch (error) {
                 console.error('Failed to render component:', error);
+                
+                // Check if it's a React availability issue
+                if (error.message.includes('React is not available') || error.message.includes('React is still not available')) {
+                    console.error('React availability issue detected, attempting recovery...');
+                    
+                    // Try to reload React from a different source
+                    const recoveryScript = document.createElement('script');
+                    recoveryScript.textContent = \`
+                        console.log('Attempting React recovery...');
+                        if (typeof React === 'undefined') {
+                            const script = document.createElement('script');
+                            script.src = 'https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.development.js';
+                            script.onload = () => {
+                                console.log('Recovery React loaded!');
+                                if (typeof React !== 'undefined') {
+                                    window.React = React;
+                                    location.reload();
+                                }
+                            };
+                            document.head.appendChild(script);
+                        }
+                    \`;
+                    document.head.appendChild(recoveryScript);
+                }
+                
                 // Show a fallback error message
                 const root = document.getElementById('root');
                 if (root) {
@@ -1330,11 +1652,15 @@ function generateAdvancedPreviewHTML(code, analysis, options = {}) {
                             <h3>⚠️ Preview Error</h3>
                             <p>Failed to load React preview. Please check your component code.</p>
                             <p style="font-size: 0.875rem; color: #6b7280;">Error: \${error.message}</p>
+                            ${error.message.includes('React') ? '<p style="color: #059669; margin-top: 0.5rem;">Attempting React recovery...</p>' : ''}
+                            <button onclick="location.reload()" style="margin-top: 1rem; padding: 0.5rem 1rem; background: #dc2626; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                                🔄 Retry
+                            </button>
                         </div>
                     \`;
                 }
             }
-        }, 100);
+        }, 200);
     </script>
 </body>
 </html>`;
