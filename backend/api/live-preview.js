@@ -565,10 +565,6 @@ function generateAdvancedPreviewHTML(code, analysis, options = {}) {
         }, 5000); // 5 second timeout
     </script>
     
-    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin onload="window.onReactLoad()" onerror="window.onReactError()"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin onload="window.onReactDomLoad()" onerror="window.onReactDomError()"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js" crossorigin onload="window.onBabelLoad()" onerror="window.onBabelError()"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
     <style>
         * { box-sizing: border-box; }
         body { 
@@ -736,6 +732,11 @@ function generateAdvancedPreviewHTML(code, analysis, options = {}) {
             font-weight: 600;
         }
     </style>
+    
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin onload="window.onReactLoad()" onerror="window.onReactError()"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin onload="window.onReactDomLoad()" onerror="window.onReactDomError()"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js" crossorigin onload="window.onBabelLoad()" onerror="window.onBabelError()"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body>
     ${enableDebug ? `
