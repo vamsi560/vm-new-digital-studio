@@ -1348,11 +1348,31 @@ function generateAdvancedPreviewHTML(code, analysis, options = {}) {
                 }
             }
             
+            // Handle any other JavaScript errors
+            if (event.error && event.error.message) {
+                console.error('Unhandled JavaScript error:', event.error.message);
+                
+                // Show error in the UI if possible
+                const root = document.getElementById('root');
+                if (root && !root.innerHTML.includes('Preview Error')) {
+                    root.innerHTML = \`
+                        <div style="padding: 2rem; text-align: center; color: #dc2626;">
+                            <h3>⚠️ JavaScript Error</h3>
+                            <p>An unexpected error occurred while loading the preview.</p>
+                            <p style="font-size: 0.875rem; color: #6b7280;">Error: \${event.error.message}</p>
+                            <button onclick="location.reload()" style="margin-top: 1rem; padding: 0.5rem 1rem; background: #dc2626; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                                🔄 Retry
+                            </button>
+                        </div>
+                    \`;
+                }
+            }
+            
             if (window.parent) {
                 window.parent.postMessage({
                     type: 'PREVIEW_ERROR',
                     error: {
-                        message: event.error?.message || event.message,
+                        message: event.error?.message || event.message || 'Unknown error occurred',
                         filename: event.filename,
                         lineno: event.lineno,
                         colno: event.colno
@@ -1621,7 +1641,7 @@ function generateAdvancedPreviewHTML(code, analysis, options = {}) {
                 console.error('Failed to render component:', error);
                 
                 // Check if it's a React availability issue
-                if (error.message.includes('React is not available') || error.message.includes('React is still not available')) {
+                if (error && error.message && (error.message.includes('React is not available') || error.message.includes('React is still not available'))) {
                     console.error('React availability issue detected, attempting recovery...');
                     
                     // Try to reload React from a different source
@@ -1647,12 +1667,15 @@ function generateAdvancedPreviewHTML(code, analysis, options = {}) {
                 // Show a fallback error message
                 const root = document.getElementById('root');
                 if (root) {
+                    const errorMessage = error && error.message ? error.message : 'Unknown error occurred';
+                    const isReactError = error && error.message && error.message.includes('React');
+                    
                     root.innerHTML = \`
                         <div style="padding: 2rem; text-align: center; color: #dc2626;">
                             <h3>⚠️ Preview Error</h3>
                             <p>Failed to load React preview. Please check your component code.</p>
-                            <p style="font-size: 0.875rem; color: #6b7280;">Error: \${error.message}</p>
-                            ${error.message.includes('React') ? '<p style="color: #059669; margin-top: 0.5rem;">Attempting React recovery...</p>' : ''}
+                            <p style="font-size: 0.875rem; color: #6b7280;">Error: \${errorMessage}</p>
+                            \${isReactError ? '<p style="color: #059669; margin-top: 0.5rem;">Attempting React recovery...</p>' : ''}
                             <button onclick="location.reload()" style="margin-top: 1rem; padding: 0.5rem 1rem; background: #dc2626; color: white; border: none; border-radius: 4px; cursor: pointer;">
                                 🔄 Retry
                             </button>
