@@ -1412,155 +1412,172 @@ function generateAdvancedPreviewHTML(code, analysis, options = {}) {
                 // Initialize base components
                 const mockComponents = await initializeComponents();
             
-            // User's component code (with error handling)
-            // Process the code to handle imports properly
-            let processedCode = \`${code}\`;
-            
-            // Extract component names from imports before removing them
-            const importMatches = processedCode.match(/import\\s+.*?from\\s+['"][^'"]+['"];?\\n?/g) || [];
-            const importedComponents = [];
-            
-            importMatches.forEach(importStatement => {
-                // Extract component names from import statements
-                const componentMatch = importStatement.match(/import\\s+{?([^}]+)}?\\s+from/);
-                if (componentMatch) {
-                    const components = componentMatch[1].split(',').map(c => c.trim());
-                    importedComponents.push(...components);
-                } else {
-                    // Handle default imports
-                    const defaultMatch = importStatement.match(/import\\s+([^\\s]+)\\s+from/);
-                    if (defaultMatch) {
-                        importedComponents.push(defaultMatch[1]);
+                // User's component code (with error handling)
+                // Process the code to handle imports properly
+                let processedCode = \`${code}\`;
+                
+                // Extract component names from imports before removing them
+                const importMatches = processedCode.match(/import\\s+.*?from\\s+['"][^'"]+['"];?\\n?/g) || [];
+                const importedComponents = [];
+                
+                importMatches.forEach(importStatement => {
+                    // Extract component names from import statements
+                    const componentMatch = importStatement.match(/import\\s+{?([^}]+)}?\\s+from/);
+                    if (componentMatch) {
+                        const components = componentMatch[1].split(',').map(c => c.trim());
+                        importedComponents.push(...components);
+                    } else {
+                        // Handle default imports
+                        const defaultMatch = importStatement.match(/import\\s+([^\\s]+)\\s+from/);
+                        if (defaultMatch) {
+                            importedComponents.push(defaultMatch[1]);
+                        }
                     }
-                }
-            });
-            
-            // Create mock components for all imported components
-            importedComponents.forEach(componentName => {
-                if (!mockComponents[componentName]) {
-                    const dynamicComponent = () => {
+                });
+                
+                // Create mock components for all imported components
+                importedComponents.forEach(componentName => {
+                    if (!mockComponents[componentName]) {
+                        const dynamicComponent = () => {
+                            if (typeof React === 'undefined') {
+                                return null;
+                            }
+                            return React.createElement('div', {
+                                style: {
+                                    padding: '2rem',
+                                    border: '2px dashed #3b82f6',
+                                    borderRadius: '8px',
+                                    background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
+                                    color: '#1e40af',
+                                    textAlign: 'center',
+                                    margin: '1rem 0',
+                                    boxShadow: '0 4px 6px rgba(59, 130, 246, 0.1)'
+                                }
+                            }, [
+                                React.createElement('div', {key: 'icon', style: {fontSize: '2rem', marginBottom: '1rem'}}, '🔧'),
+                                React.createElement('h3', {key: 'title', style: {margin: '0 0 0.5rem 0', color: '#1e40af', fontSize: '1.25rem', fontWeight: 'bold'}}, componentName + ' Component'),
+                                React.createElement('p', {key: 'desc', style: {margin: '0 0 1rem 0', fontSize: '0.875rem', opacity: 0.8}}, 'Auto-generated mock component for live preview'),
+                                React.createElement('div', {key: 'info', style: {fontSize: '0.75rem', opacity: 0.6, background: 'rgba(59, 130, 246, 0.1)', padding: '0.5rem', borderRadius: '4px'}}, 'This component will be properly implemented in the generated code')
+                            ]);
+                        };
+                        
+                        mockComponents[componentName] = dynamicComponent;
+                        window[componentName] = dynamicComponent;
+                        console.log('Pre-created mock component for import:', componentName);
+                    }
+                });
+                
+                // Remove import statements from the code since they're not needed in this context
+                // React and ReactDOM are already available globally
+                processedCode = processedCode.replace(/import\\s+.*?from\\s+['"][^'"]+['"];?\\n?/g, '');
+                
+                // Scan for component usage in JSX and create mock components proactively
+                const jsxComponentMatches = processedCode.match(/<([A-Z][a-zA-Z0-9]*)\\b/g) || [];
+                const usedComponents = [...new Set(jsxComponentMatches.map(match => match.slice(1)))];
+                
+                usedComponents.forEach(componentName => {
+                    if (!mockComponents[componentName] && componentName !== 'div' && componentName !== 'span' && componentName !== 'p' && componentName !== 'h1' && componentName !== 'h2' && componentName !== 'h3' && componentName !== 'button' && componentName !== 'input' && componentName !== 'img' && componentName !== 'a' && componentName !== 'ul' && componentName !== 'li') {
+                        const dynamicComponent = () => {
+                            if (typeof React === 'undefined') {
+                                return null;
+                            }
+                            return React.createElement('div', {
+                                style: {
+                                    padding: '2rem',
+                                    border: '2px dashed #3b82f6',
+                                    borderRadius: '8px',
+                                    background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
+                                    color: '#1e40af',
+                                    textAlign: 'center',
+                                    margin: '1rem 0',
+                                    boxShadow: '0 4px 6px rgba(59, 130, 246, 0.1)'
+                            }
+                            }, [
+                                React.createElement('div', {key: 'icon', style: {fontSize: '2rem', marginBottom: '1rem'}}, '🔧'),
+                                React.createElement('h3', {key: 'title', style: {margin: '0 0 0.5rem 0', color: '#1e40af', fontSize: '1.25rem', fontWeight: 'bold'}}, componentName + ' Component'),
+                                React.createElement('p', {key: 'desc', style: {margin: '0 0 1rem 0', fontSize: '0.875rem', opacity: 0.8}}, 'Auto-generated mock component for live preview'),
+                                React.createElement('div', {key: 'info', style: {fontSize: '0.75rem', opacity: 0.6, background: 'rgba(59, 130, 246, 0.1)', padding: '0.5rem', borderRadius: '4px'}}, 'This component will be properly implemented in the generated code')
+                            ]);
+                        };
+                        
+                        mockComponents[componentName] = dynamicComponent;
+                        window[componentName] = dynamicComponent;
+                        console.log('Pre-created mock component for JSX usage:', componentName);
+                    }
+                });
+                
+                // Remove TypeScript type annotations (function return types, parameter types, interfaces, types)
+                processedCode = processedCode
+                  // Remove function return types: function App(): JSX.Element
+                  .replace(/function\\s+\\w+\\s*\\([^)]*\\)\\s*:\\s*[^\\{]+\\{/g, match =>
+                    match.replace(/:\\s*[^\\{]+\\{/, '{')
+                  )
+                  // Remove arrow function return types: const X = (...) : JSX.Element =>
+                  .replace(/=\\s*\\([^)]*\\)\\s*:\\s*[^=]+=>/g, match =>
+                    match.replace(/:\\s*[^=]+=>/, '=>')
+                  )
+                  // Remove parameter types: (foo: string, bar: number)
+                  .replace(/\\([^)]+\\)/g, params =>
+                    params.replace(/:\\s*\\w+/g, '')
+                  )
+                  // Remove interface/type declarations
+                  .replace(/(interface|type)\\s+\\w+[^{=]*[\\{=][^\\}]*\\}/g, '')
+                  // Remove any remaining : Type after variable names
+                  .replace(/:\\s*\\w+/g, '')
+                  // Fix invalid TypeScript syntax like "const App.FC ="
+                  .replace(/const\\s+(\\w+)\\.\\w+\\s*=/g, 'const $1 =')
+                  // Fix "const App: React.FC ="
+                  .replace(/const\\s+(\\w+)\\s*:\\s*\\w+\\.\\w+\\s*=/g, 'const $1 =');
+                
+                processedCode = processedCode.replace(/export\\s+default\\s+/g, 'window.UserComponent = ');
+                processedCode = processedCode.replace(/export\\s+/g, '');
+                
+                try {
+                    // Transform JSX to JS using Babel
+                    if (typeof Babel === 'undefined') {
+                        throw new Error('Babel is not available for JSX transformation');
+                    }
+                    if (typeof Babel.transform === 'undefined') {
+                        throw new Error('Babel.transform is not available');
+                    }
+                    const transpiledCode = Babel.transform(processedCode, { presets: ['react'] }).code;
+                    // Execute the transpiled code
+                    eval(transpiledCode);
+                } catch (syntaxError) {
+                    console.error('Syntax error in component code:', syntaxError);
+                    const ErrorDisplay = () => {
                         if (typeof React === 'undefined') {
                             return null;
                         }
-                        return React.createElement('div', {
-                            style: {
-                                padding: '2rem',
-                                border: '2px dashed #3b82f6',
-                                borderRadius: '8px',
-                                background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
-                                color: '#1e40af',
-                                textAlign: 'center',
-                                margin: '1rem 0',
-                                boxShadow: '0 4px 6px rgba(59, 130, 246, 0.1)'
-                            }
-                        }, [
-                            React.createElement('div', {key: 'icon', style: {fontSize: '2rem', marginBottom: '1rem'}}, '🔧'),
-                            React.createElement('h3', {key: 'title', style: {margin: '0 0 0.5rem 0', color: '#1e40af', fontSize: '1.25rem', fontWeight: 'bold'}}, componentName + ' Component'),
-                            React.createElement('p', {key: 'desc', style: {margin: '0 0 1rem 0', fontSize: '0.875rem', opacity: 0.8}}, 'Auto-generated mock component for live preview'),
-                            React.createElement('div', {key: 'info', style: {fontSize: '0.75rem', opacity: 0.6, background: 'rgba(59, 130, 246, 0.1)', padding: '0.5rem', borderRadius: '4px'}}, 'This component will be properly implemented in the generated code')
-                        ]);
+                        return React.createElement('div', {className: 'error-boundary'},
+                            React.createElement('div', {className: 'error-title'},
+                                React.createElement('span', {}, '❌'),
+                                React.createElement('span', {}, 'Syntax Error')
+                            ),
+                            React.createElement('div', {className: 'error-message'},
+                                React.createElement('strong', {}, 'Error:'),
+                                React.createElement('span', {}, syntaxError.message)
+                            )
+                        );
                     };
-                    
-                    mockComponents[componentName] = dynamicComponent;
-                    window[componentName] = dynamicComponent;
-                    console.log('Pre-created mock component for import:', componentName);
+                    window.UserComponent = ErrorDisplay;
                 }
-            });
-            
-            // Remove import statements from the code since they're not needed in this context
-            // React and ReactDOM are already available globally
-            processedCode = processedCode.replace(/import\\s+.*?from\\s+['"][^'"]+['"];?\\n?/g, '');
-            
-            // Scan for component usage in JSX and create mock components proactively
-            const jsxComponentMatches = processedCode.match(/<([A-Z][a-zA-Z0-9]*)\\b/g) || [];
-            const usedComponents = [...new Set(jsxComponentMatches.map(match => match.slice(1)))];
-            
-            usedComponents.forEach(componentName => {
-                if (!mockComponents[componentName] && componentName !== 'div' && componentName !== 'span' && componentName !== 'p' && componentName !== 'h1' && componentName !== 'h2' && componentName !== 'h3' && componentName !== 'button' && componentName !== 'input' && componentName !== 'img' && componentName !== 'a' && componentName !== 'ul' && componentName !== 'li') {
-                    const dynamicComponent = () => {
-                        if (typeof React === 'undefined') {
-                            return null;
-                        }
-                        return React.createElement('div', {
-                            style: {
-                                padding: '2rem',
-                                border: '2px dashed #3b82f6',
-                                borderRadius: '8px',
-                                background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
-                                color: '#1e40af',
-                                textAlign: 'center',
-                                margin: '1rem 0',
-                                boxShadow: '0 4px 6px rgba(59, 130, 246, 0.1)'
-                            }
-                        }, [
-                            React.createElement('div', {key: 'icon', style: {fontSize: '2rem', marginBottom: '1rem'}}, '🔧'),
-                            React.createElement('h3', {key: 'title', style: {margin: '0 0 0.5rem 0', color: '#1e40af', fontSize: '1.25rem', fontWeight: 'bold'}}, componentName + ' Component'),
-                            React.createElement('p', {key: 'desc', style: {margin: '0 0 1rem 0', fontSize: '0.875rem', opacity: 0.8}}, 'Auto-generated mock component for live preview'),
-                            React.createElement('div', {key: 'info', style: {fontSize: '0.75rem', opacity: 0.6, background: 'rgba(59, 130, 246, 0.1)', padding: '0.5rem', borderRadius: '4px'}}, 'This component will be properly implemented in the generated code')
-                        ]);
-                    };
-                    
-                    mockComponents[componentName] = dynamicComponent;
-                    window[componentName] = dynamicComponent;
-                    console.log('Pre-created mock component for JSX usage:', componentName);
+            } catch (error) {
+                console.error('Component initialization failed:', error);
+                // Show error in the UI
+                const root = document.getElementById('root');
+                if (root) {
+                    root.innerHTML = \`
+                        <div style="padding: 2rem; text-align: center; color: #dc2626;">
+                            <h3>⚠️ Initialization Error</h3>
+                            <p>Failed to initialize component preview.</p>
+                            <p style="font-size: 0.875rem; color: #6b7280;">Error: \${error.message}</p>
+                            <button onclick="location.reload()" style="margin-top: 1rem; padding: 0.5rem 1rem; background: #dc2626; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                                🔄 Retry
+                            </button>
+                        </div>
+                    \`;
                 }
-            });
-            
-            // Remove TypeScript type annotations (function return types, parameter types, interfaces, types)
-            processedCode = processedCode
-              // Remove function return types: function App(): JSX.Element
-              .replace(/function\\s+\\w+\\s*\\([^)]*\\)\\s*:\\s*[^\\{]+\\{/g, match =>
-                match.replace(/:\\s*[^\\{]+\\{/, '{')
-              )
-              // Remove arrow function return types: const X = (...) : JSX.Element =>
-              .replace(/=\\s*\\([^)]*\\)\\s*:\\s*[^=]+=>/g, match =>
-                match.replace(/:\\s*[^=]+=>/, '=>')
-              )
-              // Remove parameter types: (foo: string, bar: number)
-              .replace(/\\([^)]+\\)/g, params =>
-                params.replace(/:\\s*\\w+/g, '')
-              )
-              // Remove interface/type declarations
-              .replace(/(interface|type)\\s+\\w+[^{=]*[\\{=][^\\}]*\\}/g, '')
-              // Remove any remaining : Type after variable names
-              .replace(/:\\s*\\w+/g, '')
-              // Fix invalid TypeScript syntax like "const App.FC ="
-              .replace(/const\\s+(\\w+)\\.\\w+\\s*=/g, 'const $1 =')
-              // Fix "const App: React.FC ="
-              .replace(/const\\s+(\\w+)\\s*:\\s*\\w+\\.\\w+\\s*=/g, 'const $1 =');
-            
-            processedCode = processedCode.replace(/export\\s+default\\s+/g, 'window.UserComponent = ');
-            processedCode = processedCode.replace(/export\\s+/g, '');
-            
-            try {
-                // Transform JSX to JS using Babel
-                if (typeof Babel === 'undefined') {
-                    throw new Error('Babel is not available for JSX transformation');
-                }
-                if (typeof Babel.transform === 'undefined') {
-                    throw new Error('Babel.transform is not available');
-                }
-                const transpiledCode = Babel.transform(processedCode, { presets: ['react'] }).code;
-                // Execute the transpiled code
-                eval(transpiledCode);
-            } catch (syntaxError) {
-                console.error('Syntax error in component code:', syntaxError);
-                const ErrorDisplay = () => {
-                    if (typeof React === 'undefined') {
-                        return null;
-                    }
-                    return React.createElement('div', {className: 'error-boundary'},
-                        React.createElement('div', {className: 'error-title'},
-                            React.createElement('span', {}, '❌'),
-                            React.createElement('span', {}, 'Syntax Error')
-                        ),
-                        React.createElement('div', {className: 'error-message'},
-                            React.createElement('strong', {}, 'Error:'),
-                            React.createElement('span', {}, syntaxError.message)
-                        )
-                    );
-                };
-                window.UserComponent = ErrorDisplay;
             }
         })();
 
