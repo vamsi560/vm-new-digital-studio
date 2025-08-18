@@ -1,20 +1,30 @@
 import axios from 'axios';
 
 function extractFileKey(figmaUrl) {
-  // Figma file URLs look like: https://www.figma.com/file/<fileKey>/...
-  const match = figmaUrl.match(/figma.com\/file\/([a-zA-Z0-9]+)\//);
-  return match ? match[1] : null;
+  // Support both https://www.figma.com/file/<key>/... and https://www.figma.com/design/<key>/...
+  const match = figmaUrl.match(/figma\.com\/(file|design)\/([a-zA-Z0-9]+)\//);
+  return match ? match[2] : null;
 }
 
-module.exports = async (req, res) => {
+export default async (req, res) => {
   try {
     const { figmaUrl } = req.body;
     if (!figmaUrl) return res.status(400).json({ error: 'No figmaUrl provided.' });
     const fileKey = extractFileKey(figmaUrl);
     if (!fileKey) return res.status(400).json({ error: 'Invalid Figma URL.' });
 
-    const token = process.env.FIGMA_API_TOKEN;
-    const headers = token ? { 'X-Figma-Token': token } : {};
+    const token = "figd_00LP2oP9Fqfd0PY0alm9L9tsjlC85pn8m5KEeXMn";
+    if (!token) {
+      return res.status(400).json({
+        error: 'FIGMA_API_TOKEN is not configured on the server. Please set it in backend/.env and restart the server.'
+      });
+    }
+
+    const headers = {
+      'X-Figma-Token': token,
+      'User-Agent': 'vm-digital-studio/1.0',
+      'Accept': 'application/json'
+    };
 
     // 1. Get file nodes (document structure)
     const fileResp = await axios.get(`https://api.figma.com/v1/files/${fileKey}`, { headers });
@@ -35,7 +45,7 @@ module.exports = async (req, res) => {
     // 2. Get image URLs for all frames
     const ids = frames.map(f => f.id).join(',');
     const imagesResp = await axios.get(`https://api.figma.com/v1/images/${fileKey}?ids=${ids}&format=png`, { headers });
-    const images = imagesResp.data.images;
+    const images = imagesResp.data.images || {};
 
     // 3. Download each image and encode as base64
     const results = await Promise.all(frames.map(async (frame) => {
@@ -51,24 +61,33 @@ module.exports = async (req, res) => {
           mimeType
         };
       } catch (imgErr) {
-        console.error(`Failed to download image for frame ${frame.name}:`, imgErr.message);
-        // Silently ignore frames that fail to download, or you could return an error indicator
-        return null;
+        // Return a placeholder entry indicating a failed frame download
+        return {
+          fileName: `${frame.name.replace(/[^a-zA-Z0-9_-]/g, '_')}.png`,
+          error: true,
+          message: `Failed to download image for frame ${frame.name}`
+        };
       }
     }));
 
-    // Filter out any null results from failed downloads
+    // Filter out any null results from failed URL resolution
     const successfulResults = results.filter(Boolean);
     if (successfulResults.length === 0) {
-      return res.status(500).json({ error: 'Could not download any images from Figma.' });
+      return res.status(502).json({ error: 'Could not download any images from Figma.' });
     }
 
     res.status(200).json(successfulResults);
 
   } catch (err) {
-    console.error('Error in /api/import-figma:', err.response ? err.response.data : err.message);
-    const status = err.response ? err.response.status : 500;
-    const message = err.response ? err.response.data.err || 'Failed to import from Figma' : 'Internal Server Error';
-    res.status(status).json({ error: message, details: err.message });
+    // Normalize error to JSON always
+    const status = err.response?.status || 500;
+    let figmaResponse = err.response?.data;
+    if (typeof figmaResponse !== 'object') {
+      figmaResponse = String(figmaResponse || err.message || 'Unknown error');
+    }
+    res.status(status).json({
+      error: 'Figma import failed',
+      details: figmaResponse
+    });
   }
 };
