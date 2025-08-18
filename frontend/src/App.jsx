@@ -184,7 +184,7 @@ const PrototypeView = ({ onNavigate, isJsZipLoaded }) => {
         const newFlowOrder = [...flowOrder];
         newFlowOrder[index] = draggedItem;
         setFlowOrder(newFlowOrder);
-        setUploadedFiles(uploadedFiles.filter(f => f.name !== draggedItem.name));
+        setUploadedFiles(uploadedFiles.filter(f => f !== draggedItem));
         setDraggedItem(null);
     };
 
@@ -343,7 +343,7 @@ const PrototypeView = ({ onNavigate, isJsZipLoaded }) => {
                 <aside className="w-full lg:w-80 flex-shrink-0 rounded-xl p-4 flex flex-col gap-4 bg-[#1f2937] border border-gray-700/50">
                     <div>
                         <h3 className="text-lg font-bold text-white mb-4">IMPORT</h3>
-                         <div className="space-y-3">
+                        <div className="space-y-3">
                             <div className="relative">
                                 <input type="text" value={figmaUrl} onChange={(e) => setFigmaUrl(e.target.value)} placeholder="Paste Figma URL..." className="w-full p-3 pr-12 bg-gray-700 border border-gray-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500/50"/>
                                 <button onClick={handleFigmaImport} className="absolute inset-y-0 right-0 px-3 flex items-center bg-green-600 hover:bg-green-700 rounded-r-lg">
@@ -547,7 +547,7 @@ const AppLabGenerateView = ({ onNavigate, initialPlatform, isJsZipLoaded }) => {
         const newFlowOrder = [...flowOrder];
         newFlowOrder[index] = draggedItem;
         setFlowOrder(newFlowOrder);
-        setUploadedFiles(uploadedFiles.filter(f => f.name !== draggedItem.name));
+        setUploadedFiles(uploadedFiles.filter(f => f !== draggedItem));
         setDraggedItem(null);
     };
 
