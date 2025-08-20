@@ -80,21 +80,43 @@ const ErrorDisplay = ({ message }) => {
 
 const InitialView = ({ onNavigate }) => (
     
-    <div className="h-full w-full flex flex-col items-center justify-center p-8 text-center bg-black">
-        <header className="mb-8">
-            <h1 className="text-5xl md:text-7xl font-black text-white whitespace-nowrap">
-                VM Digital Studio does
-                <span className="inline-block bg-green-500 text-white px-4 py-2 rounded-lg ml-4">that.</span>
-            </h1>
-        </header>
-        <p className="text-lg md:text-xl italic text-gray-400 max-w-3xl mx-auto">
-            "You've got to start with the user experience and work back toward the technology - not the other way around."
-            <span className="block mt-2 not-italic">- Steve Jobs</span>
-        </p>
-        <div onClick={() => onNavigate('landing')} className="cursor-pointer absolute bottom-10 left-1/2 -translate-x-1/2 animate-pulse">
-            <svg className="w-12 h-12 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
-        </div>
-    </div>
+<div className="h-screen w-full flex flex-col items-center justify-center p-8 text-center bg-black relative">
+  <header className="mb-8">
+    <h1 className="text-5xl md:text-7xl font-black text-white whitespace-nowrap">
+      VM Digital Studio does
+      <span className="inline-block bg-green-500 text-white px-4 py-2 rounded-lg ml-4">
+        that.
+      </span>
+    </h1>
+  </header>
+
+  <p className="text-lg md:text-xl italic text-gray-400 max-w-3xl mx-auto">
+    "You've got to start with the user experience and work back toward the technology - not the other way around."
+    <span className="block mt-2 not-italic">- Steve Jobs</span>
+  </p>
+
+  {/* Arrow stays fixed at bottom, independent of content */}
+  <div
+    onClick={() => onNavigate("landing")}
+    className="cursor-pointer absolute bottom-10 left-1/2 -translate-x-1/2 animate-pulse"
+  >
+    <svg
+      className="w-12 h-12 text-gray-500"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+        d="M19 9l-7 7-7-7"
+      ></path>
+    </svg>
+  </div>
+</div>
+
 );
 
 const LandingView = ({ onNavigate }) => (
