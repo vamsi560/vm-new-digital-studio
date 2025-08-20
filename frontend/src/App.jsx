@@ -79,6 +79,7 @@ const ErrorDisplay = ({ message }) => {
 // --- Main Application Views ---
 
 const InitialView = ({ onNavigate }) => (
+    
     <div className="h-full w-full flex flex-col items-center justify-center p-8 text-center bg-black">
         <header className="mb-8">
             <h1 className="text-5xl md:text-7xl font-black text-white whitespace-nowrap">
@@ -97,13 +98,13 @@ const InitialView = ({ onNavigate }) => (
 );
 
 const LandingView = ({ onNavigate }) => (
-    <div className="h-full w-full flex items-center justify-center p-4 bg-black">
-        <div className="w-full max-w-8xl h-[700px] bg-[#121212] rounded-xl shadow-2xl flex flex-col border border-gray-700/50 mx-auto pt-12">
+   
+        <div className="  bg-[#121212]    pt-12">
             <div className="flex-shrink-0 h-11 flex items-center justify-center relative border-b border-gray-700/50">
                 <TrafficLights />
                 <p className="text-sm text-gray-400"></p>
             </div>
-            <div className="flex-grow p-9 flex items-center justify-center overflow-y-auto">
+            <div className="flex-grow  flex items-center justify-center overflow-y-auto">
                  <div className="w-full max-w-4xl mx-auto text-center">
                     <header className="mb-12 md:mb-16">
                         <div className="inline-flex items-center space-x-3 mb-2">
@@ -128,7 +129,7 @@ const LandingView = ({ onNavigate }) => (
                 </div>
             </div>
         </div>
-    </div>
+   
 );
 
 const PrototypeView = ({ onNavigate, isJsZipLoaded }) => {
@@ -337,8 +338,8 @@ const PrototypeView = ({ onNavigate, isJsZipLoaded }) => {
     }, [generatedFiles]);
 
     return (
-        <div className="content-wrapper min-h-screen flex flex-col p-8 bg-[#0D0F18]">
-            <button onClick={() => onNavigate('landing')} className="absolute top-5 left-5 z-50 bg-gray-800/80 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg">&larr; Back</button>
+        <div className="content-wrapper min-h-screen flex flex-col ">
+            <button onClick={() => onNavigate('landing')} className="absolute mt-2 left-5  bg-gray-800/80 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg">&larr; Back</button>
             <div className="flex-grow flex flex-col lg:flex-row gap-6 w-full max-w-6xl mx-auto mt-12">
                 <aside className="w-full lg:w-80 flex-shrink-0 rounded-xl p-4 flex flex-col gap-4 bg-[#1f2937] border border-gray-700/50">
                     <div>
@@ -354,7 +355,7 @@ const PrototypeView = ({ onNavigate, isJsZipLoaded }) => {
                     </div>
                     <hr className="border-gray-600" />
                     <div>
-                        <h3 className="text-lg font-bold text-white mb-4">STYLESHEET</h3>
+                        <h3 className="text-lg font-bold text-white mb-4 b">STYLESHEET</h3>
                         <div className="space-y-3">
                             <label htmlFor="stylesheet-upload" className="flex items-center justify-center w-full p-3 border-2 border-gray-600 border-dashed rounded-lg cursor-pointer bg-gray-700 hover:bg-gray-600">
                                 <svg className="w-8 h-8 mr-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
@@ -474,7 +475,7 @@ const PrototypeView = ({ onNavigate, isJsZipLoaded }) => {
 };
 
 const AppLabLandingView = ({ onNavigate }) => (
-    <div className="h-full w-full flex items-center justify-center p-4 bg-black">
+    <div className="h-full w-full flex items-center justify-center ">
         <div className="w-full max-w-7xl h-[700px] bg-[#121212] rounded-xl shadow-2xl flex flex-col border border-gray-700/50 mx-auto pt-8">
             <div className="flex-shrink-0 h-11 flex items-center justify-center relative border-b border-gray-700/50">
                 <TrafficLights />
@@ -482,7 +483,8 @@ const AppLabLandingView = ({ onNavigate }) => (
                 <button onClick={() => onNavigate('landing')} className="absolute top-2.5 right-4 text-gray-400 hover:text-white">&larr; Back</button>
             </div>
             <div className="flex-grow p-8 flex items-center justify-center overflow-y-auto">
-                 <div className="w-full max-w-4xl mx-auto text-center">
+                 <div className="w-full max-w-4xl mx-auto text-center"> 
+                    
                     <main>
                         <h1 className="text-4xl md:text-6xl font-bold leading-tight mb-12 md:mb-16">
                             <span className="text-white">Choose Your Platform</span>
@@ -1053,8 +1055,10 @@ function App() {
     };
 
     return (
-        <div className="bg-black text-white min-h-screen flex justify-center">
-        <main className="relative w-full max-w-[2600px] mx-auto h-screen px-2 md:px-4" style={{ transform: 'scale(0.85)', transformOrigin: 'top center' }}>
+        
+
+       <div className='bg-black min-h-screen'>
+        <main className="relative w-full max-w-[2600px] mx-auto min-h-screen px-2 md:px-4" style={{ transform: 'scale(0.85)', transformOrigin: 'top center' }}>
             {/* Small GitHub icon in the top right */}
             <div className="absolute top-4 right-4 z-50">
                 {!isGithubAuthenticated ? (
@@ -1092,6 +1096,7 @@ function App() {
             {renderView()}
         </main>
         </div>
+       
     );
 }
 
