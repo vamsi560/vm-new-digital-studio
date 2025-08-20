@@ -116,7 +116,7 @@ function generateAdvancedPreviewHTML(code, analysis) {
             margin: 0; 
             padding: 0; 
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-            background: #f8fafc;
+             background: #f8fafc;
         }
         .preview-container {
             min-height: 100vh;
