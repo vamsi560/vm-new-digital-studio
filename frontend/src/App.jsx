@@ -2,6 +2,9 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { LiveProvider, LivePreview, LiveError } from 'react-live';
 import Cookies from 'js-cookie';
 import AdvancedReactPreview from './components/advanced-react-preview';
+import PrototypeLabFlow from './components/PrototypeLabFlow';
+import AndroidLabFlow from './components/AndroidLabFlow';
+import IOSLabFlow from './components/IOSLabFlow';
 
 // --- Reusable UI Components ---
 
@@ -14,12 +17,12 @@ const TrafficLights = () => (
 );
 
 const ServiceCard = ({ title, svgPath, onClick, disabled = false }) => (
-    <div onClick={!disabled ? onClick : undefined} className={`bg-[#1F2937] border border-[#374151] rounded-lg p-4 md:p-6 flex flex-col items-center justify-center h-full transition-all duration-300 ease-in-out ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:border-gray-200 hover:-translate-y-1'}`}>
-        <svg className="w-8 h-8 mb-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <div onClick={!disabled ? onClick : undefined} className={`bg-[#1F2937] border border-[#374151] rounded-lg p-3 md:p-4 flex flex-col items-center justify-center h-32 transition-all duration-300 ease-in-out ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:border-gray-200 hover:-translate-y-1'}`}>
+        <svg className="w-6 h-6 mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d={svgPath}></path>
         </svg>
-        <h3 className="font-semibold text-white text-base md:text-lg">{title}</h3>
-        {disabled && <span className="text-xs text-yellow-400 mt-2">Coming Soon</span>}
+        <h3 className="font-semibold text-white text-sm md:text-base">{title}</h3>
+        {disabled && <span className="text-xs text-yellow-400 mt-1">Coming Soon</span>}
     </div>
 );
 
@@ -79,8 +82,7 @@ const ErrorDisplay = ({ message }) => {
 // --- Main Application Views ---
 
 const InitialView = ({ onNavigate }) => (
-    
-<div className="h-screen w-full flex flex-col items-center justify-center p-8 text-center bg-black relative">
+    <div className="h-screen w-full flex flex-col items-center justify-center p-4 text-center bg-black relative">
   <header className="mb-8">
     <h1 className="text-5xl md:text-7xl font-black text-white whitespace-nowrap">
       VM Digital Studio does
@@ -120,14 +122,13 @@ const InitialView = ({ onNavigate }) => (
 );
 
 const LandingView = ({ onNavigate }) => (
-   
-        <div className="  bg-[#121212]    pt-12">
-            <div className="flex-shrink-0 h-11 flex items-center justify-center relative border-b border-gray-700/50">
-                <TrafficLights />
-                <p className="text-sm text-gray-400"></p>
-            </div>
-            <div className="flex-grow  flex items-center justify-center overflow-y-auto">
-                 <div className="w-full max-w-4xl mx-auto text-center">
+    <div className="bg-[#121212] w-full h-screen">
+        <div className="flex-shrink-0 h-11 flex items-center justify-center relative border-b border-gray-700/50">
+            <TrafficLights />
+            <p className="text-sm text-gray-400"></p>
+        </div>
+        <div className="flex-grow flex items-center justify-center overflow-y-auto">
+            <div className="w-full max-w-4xl mx-auto text-center px-4">
                     <header className="mb-12 md:mb-16">
                         <div className="inline-flex items-center space-x-3 mb-2">
                             <div className="border border-gray-600 p-2 rounded-lg"><span className="font-bold text-3xl text-white">VM</span></div>
@@ -141,7 +142,7 @@ const LandingView = ({ onNavigate }) => (
                         </h1>
                         <section>
                             <h2 className="text-xl text-gray-400 mb-8">We do ui/ux design for</h2>
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 h-40">
                                 <ServiceCard title="Prototype Lab" svgPath="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" onClick={() => onNavigate('prototype')} />
                                 <ServiceCard title="App Lab" svgPath="M12 18h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" onClick={() => onNavigate('app-lab-landing')} />
                                 <ServiceCard title="Integration Lab" svgPath="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9V3m0 18a9 9 0 009-9m-9 9a9 9 0 00-9-9" onClick={() => onNavigate('integration-lab')} />
@@ -217,7 +218,7 @@ const PrototypeView = ({ onNavigate, isJsZipLoaded }) => {
         setError('');
         setWorkflowStatus({ text: 'Importing from Figma...', architect: 'running' });
         try {
-            const response = await fetch('/api/import-figma', {
+            const response = await fetch('https://digital-studio-vm.vercel.app/api/import-figma', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ figmaUrl }),
@@ -264,7 +265,7 @@ const PrototypeView = ({ onNavigate, isJsZipLoaded }) => {
 
         try {
             setWorkflowStatus({ text: 'Architect: Analyzing project structure...', architect: 'running' });
-            const response = await fetch('/api/generate-code', {
+            const response = await fetch('https://digital-studio-vm.vercel.app/api/generate-code', {
                 method: 'POST',
                 body: formData,
             });
@@ -497,8 +498,8 @@ const PrototypeView = ({ onNavigate, isJsZipLoaded }) => {
 };
 
 const AppLabLandingView = ({ onNavigate }) => (
-    <div className="h-full w-full flex items-center justify-center ">
-        <div className="w-full max-w-7xl h-[700px] bg-[#121212] rounded-xl shadow-2xl flex flex-col border border-gray-700/50 mx-auto pt-8">
+    <div className="h-screen w-full flex items-center justify-center">
+        <div className="w-full h-full bg-[#121212] flex flex-col">
             <div className="flex-shrink-0 h-11 flex items-center justify-center relative border-b border-gray-700/50">
                 <TrafficLights />
                 <p className="text-sm text-gray-400">App Lab</p>
@@ -513,8 +514,8 @@ const AppLabLandingView = ({ onNavigate }) => (
                         </h1>
                         <section>
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                                <ServiceCard title="Android" svgPath="M4.33 2.86a2 2 0 012.02 0l8.29 4.28a2 2 0 011.36 1.86v7.14a2 2 0 01-1.36 1.86l-8.29 4.28a2 2 0 01-2.02 0l-8.29-4.28a2 2 0 01-1.36-1.86V8.86a2 2 0 011.36-1.86l8.29-4.28zM9 12a3 3 0 100-6 3 3 0 000 6z" onClick={() => onNavigate('app-lab-generate', 'android')} />
-                                <ServiceCard title="iOS" svgPath="M12 18h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" onClick={() => onNavigate('app-lab-generate', 'ios')} />
+                                <ServiceCard title="Android" svgPath="M4.33 2.86a2 2 0 012.02 0l8.29 4.28a2 2 0 011.36 1.86v7.14a2 2 0 01-1.36 1.86l-8.29 4.28a2 2 0 01-2.02 0l-8.29-4.28a2 2 0 01-1.36-1.86V8.86a2 2 0 011.36-1.86l8.29-4.28zM9 12a3 3 0 100-6 3 3 0 000 6z" onClick={() => onNavigate('android')} />
+                                <ServiceCard title="iOS" svgPath="M12 18h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" onClick={() => onNavigate('ios')} />
                                 <ServiceCard title="Progressive Web App" svgPath="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9V3m0 18a9 9 0 009-9m-9 9a9 9 0 00-9-9" onClick={() => onNavigate('app-lab-generate', 'pwa')} />
                             </div>
                         </section>
@@ -589,7 +590,7 @@ const AppLabGenerateView = ({ onNavigate, initialPlatform, isJsZipLoaded }) => {
 
         try {
             setWorkflowStatus({ text: 'Architect: Analyzing project structure...', architect: 'running' });
-            const response = await fetch('/api/generate-native-code', {
+            const response = await fetch('https://digital-studio-vm.vercel.app/api/generate-native-code', {
                 method: 'POST',
                 body: formData,
             });
@@ -799,7 +800,7 @@ const IntegrationLabView = ({ onNavigate }) => {
         setError('');
         setRefinedPlan('');
         try {
-            const response = await fetch('/api/analyze-prompt', {
+            const response = await fetch('https://digital-studio-vm.vercel.app/api/analyze-prompt', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ prompt }),
@@ -828,7 +829,7 @@ const IntegrationLabView = ({ onNavigate }) => {
 
         try {
             setWorkflowStatus({ text: 'Architect: Analyzing requirements...', architect: 'running' });
-            const response = await fetch('/api/generate-from-text', {
+            const response = await fetch('https://digital-studio-vm.vercel.app/api/generate-from-text', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -881,16 +882,16 @@ const IntegrationLabView = ({ onNavigate }) => {
     };
 
     return (
-        <div className="content-wrapper min-h-screen flex flex-col p-8 bg-[#0D0F18]">
+        <div className="content-wrapper h-screen w-full flex flex-col p-4 bg-[#0D0F18]">
             <button onClick={() => onNavigate('landing')} className="absolute top-5 left-5 z-50 bg-gray-800/80 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg">&larr; Back</button>
             
-            <header className="text-center my-8">
-                <h1 className="text-5xl md:text-6xl font-black text-white">
+            <header className="text-center my-4">
+                <h1 className="text-4xl md:text-5xl font-black text-white">
                     <span className="text-green-400">AI</span> is the new <span className="text-green-400">UI</span>
                 </h1>
             </header>
 
-            <div className="flex-grow flex flex-col lg:flex-row gap-6 w-full max-w-[90rem] mx-auto">
+            <div className="flex-grow flex flex-col lg:flex-row gap-4 w-full">
                 <aside className="w-full lg:w-80 flex-shrink-0 rounded-xl p-4 flex flex-col gap-4 bg-[#1f2937] border border-gray-700/50">
                     <h3 className="text-lg font-bold text-white mb-2">PROMPT EXAMPLES</h3>
                     <div className="flex flex-col gap-2">
@@ -990,10 +991,8 @@ const IntegrationLabView = ({ onNavigate }) => {
 function App() {
     const [view, setView] = useState('initial');
     const [appLabPlatform, setAppLabPlatform] = useState('android');
-    const [isGithubAuthenticated, setIsGithubAuthenticated] = useState(false);
-    const [githubExportStatus, setGithubExportStatus] = useState(null); // { loading, error, url }
-    const [showExportModal, setShowExportModal] = useState(false);
-    const [repoNameInput, setRepoNameInput] = useState('my-digital-studio-export');
+
+
     const [error, setError] = useState('');
     const [selectedFile, setSelectedFile] = useState(null);
     const [generatedFiles, setGeneratedFiles] = useState({});
@@ -1017,9 +1016,7 @@ function App() {
         };
     }, []);
 
-    useEffect(() => {
-        setIsGithubAuthenticated(!!Cookies.get('github_token'));
-    }, []);
+
 
     const handleNavigate = (targetView, platform) => {
         if (platform) {
@@ -1032,8 +1029,12 @@ function App() {
         switch (view) {
             case 'landing':
                 return <LandingView onNavigate={handleNavigate} />;
-            case 'prototype':
-                return <PrototypeView onNavigate={handleNavigate} isJsZipLoaded={isJsZipLoaded} />;
+                    case 'prototype':
+            return <PrototypeLabFlow onNavigate={handleNavigate} />;
+        case 'android':
+            return <AndroidLabFlow onNavigate={handleNavigate} />;
+        case 'ios':
+            return <IOSLabFlow onNavigate={handleNavigate} />;
             case 'app-lab-landing':
                 return <AppLabLandingView onNavigate={handleNavigate} />;
             case 'app-lab-generate':
@@ -1046,79 +1047,15 @@ function App() {
         }
     };
 
-    // Export to GitHub logic
-    const handleExportToGithub = async () => {
-      setGithubExportStatus({ loading: true });
-      setShowExportModal(false);
-      try {
-        const res = await fetch('/api/github-export', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            repoName: repoNameInput,
-            files: generatedFiles
-          })
-        });
-        if (res.status === 401) {
-          setIsGithubAuthenticated(false);
-          setGithubExportStatus({ error: 'Not authenticated with GitHub. Please connect your account.' });
-          return;
-        }
-        if (!res.ok) {
-          const err = await res.json();
-          setGithubExportStatus({ error: err.error || 'Export failed.' });
-          return;
-        }
-        const data = await res.json();
-        setGithubExportStatus({ url: data.url });
-      } catch (err) {
-        setGithubExportStatus({ error: err.message });
-      }
-    };
+
 
     return (
-        
-
-       <div className='bg-black min-h-screen'>
-        <main className="relative w-full max-w-[2600px] mx-auto min-h-screen px-2 md:px-4" style={{ transform: 'scale(0.85)', transformOrigin: 'top center' }}>
-            {/* Small GitHub icon in the top right */}
-            <div className="absolute top-4 right-4 z-50">
-                {!isGithubAuthenticated ? (
-                    <a href="/api/github-login" title="Connect to GitHub" className="bg-gray-700 hover:bg-green-700 text-white p-2 rounded-full flex items-center justify-center">
-                        <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M12 .5C5.73.5.5 5.73.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56 0-.28-.01-1.02-.02-2-3.2.7-3.88-1.54-3.88-1.54-.53-1.34-1.3-1.7-1.3-1.7-1.06-.72.08-.71.08-.71 1.17.08 1.78 1.2 1.78 1.2 1.04 1.78 2.73 1.27 3.4.97.11-.75.41-1.27.74-1.56-2.55-.29-5.23-1.28-5.23-5.7 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.18 1.18a11.1 11.1 0 012.9-.39c.98 0 1.97.13 2.9.39 2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.84 1.19 3.1 0 4.43-2.69 5.41-5.25 5.7.42.36.79 1.09.79 2.2 0 1.59-.01 2.87-.01 3.26 0 .31.21.68.8.56C20.71 21.39 24 17.08 24 12c0-6.27-5.23-11.5-12-11.5z"/></svg>
-                    </a>
-                ) : (
-                    <button onClick={() => setShowExportModal(true)} className="bg-green-700 hover:bg-green-800 text-white p-2 rounded-full flex items-center justify-center" title="Export to GitHub">
-                        <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M12 .5C5.73.5.5 5.73.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56 0-.28-.01-1.02-.02-2-3.2.7-3.88-1.54-3.88-1.54-.53-1.34-1.3-1.7-1.3-1.7-1.06-.72.08-.71.08-.71 1.17.08 1.78 1.2 1.78 1.2 1.04 1.78 2.73 1.27 3.4.97.11-.75.41-1.27.74-1.56-2.55-.29-5.23-1.28-5.23-5.7 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.18 1.18a11.1 11.1 0 012.9-.39c.98 0 1.97.13 2.9.39 2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.84 1.19 3.1 0 4.43-2.69 5.41-5.25 5.7.42.36.79 1.09.79 2.2 0 1.59-.01 2.87-.01 3.26 0 .31.21.68.8.56C20.71 21.39 24 17.08 24 12c0-6.27-5.23-11.5-12-11.5z"/></svg>
-                    </button>
-                )}
-            </div>
-            {/* Export Modal */}
-            {showExportModal && (
-                <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/70">
-                    <div className="bg-gray-900 border border-gray-700 rounded-lg shadow-xl w-full max-w-md p-6 relative">
-                        <button onClick={() => setShowExportModal(false)} className="absolute top-4 right-4 text-gray-400 hover:text-white text-2xl font-bold">&times;</button>
-                        <h2 className="text-xl font-bold text-green-400 mb-4">Export to GitHub</h2>
-                        <label className="block mb-2 text-gray-300 font-semibold">Repository Name</label>
-                        <input type="text" value={repoNameInput} onChange={e => setRepoNameInput(e.target.value)} className="w-full p-2 rounded bg-gray-800 border border-gray-700 text-white mb-4" />
-                        <button onClick={handleExportToGithub} className="w-full bg-green-700 hover:bg-green-800 text-white font-bold py-2 px-4 rounded">Export</button>
-                        {githubExportStatus && githubExportStatus.loading && (
-                            <div className="text-xs text-gray-300 bg-gray-800 px-2 py-1 rounded mt-2">Exporting...</div>
-                        )}
-                        {githubExportStatus && githubExportStatus.error && (
-                            <div className="text-xs text-red-400 bg-gray-800 px-2 py-1 rounded mt-2">{githubExportStatus.error}</div>
-                        )}
-                        {githubExportStatus && githubExportStatus.url && (
-                            <a href={githubExportStatus.url} target="_blank" rel="noopener noreferrer" className="text-xs text-green-400 underline bg-gray-800 px-2 py-1 rounded mt-2">View Repo</a>
-                        )}
-                    </div>
-                </div>
-            )}
-            {/* Main View */}
-            {renderView()}
-        </main>
+        <div className='bg-black min-h-screen w-full'>
+            <main className="relative w-full min-h-screen">
+                {/* Main View */}
+                {renderView()}
+            </main>
         </div>
-       
     );
 }
 

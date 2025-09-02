@@ -38,7 +38,7 @@ const AdvancedReactPreview = ({
       setPreviewReady(false);
 
       try {
-        const response = await fetch('/api/live-preview', {
+        const response = await fetch('https://digital-studio-vm.vercel.app/api/live-preview', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

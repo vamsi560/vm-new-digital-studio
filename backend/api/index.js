@@ -1,5 +1,9 @@
-// 📁 File: api/index.js
+import EnhancedAPI from './enhanced-api.js';
+import dotenv from 'dotenv';
 
-export default (req, res) => {
-  res.status(200).json({ message: 'Digital Studio backend is running!' });
-};
+// Load environment variables
+dotenv.config();
+
+// Create and start the enhanced API
+const api = new EnhancedAPI();
+api.start();

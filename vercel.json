@@ -1,26 +1,130 @@
 {
-  "version": 2,
-  "builds": [
-    {
-      "src": "backend/api/**/*.js",
-      "use": "@vercel/node"
+  "buildCommand": "cd frontend && npm install && npm run build",
+  "outputDirectory": "frontend/dist",
+  "installCommand": "npm install",
+  "framework": "vite",
+  "functions": {
+    "api/unified-api.js": {
+      "maxDuration": 60
     },
-    {
-      "src": "frontend/package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "dist"
-      }
+    "api/code-generation.js": {
+      "maxDuration": 60
+    },
+    "api/figma-integration.js": {
+      "maxDuration": 60
+    },
+    "api/mobile-generation.js": {
+      "maxDuration": 60
+    },
+    "api/projects.js": {
+      "maxDuration": 30
+    },
+    "api/health.js": {
+      "maxDuration": 10
+    },
+    "api/live-preview.js": {
+      "maxDuration": 60
+    },
+    "api/evaluation.js": {
+      "maxDuration": 30
+    },
+    "api/github-export.js": {
+      "maxDuration": 30
+    },
+    "api/download.js": {
+      "maxDuration": 30
+    },
+    "api/status.js": {
+      "maxDuration": 10
+    },
+    "api/preview-config.js": {
+      "maxDuration": 10
     }
-  ],
-  "routes": [
+  },
+  "rewrites": [
     {
-      "src": "/api/(.*)",
-      "dest": "backend/api/$1.js"
+      "source": "/api/health",
+      "destination": "/api/health.js"
     },
     {
-      "src": "/(.*)",
-      "dest": "/frontend/$1"
+      "source": "/api/status",
+      "destination": "/api/status.js"
+    },
+    {
+      "source": "/api/preview-config",
+      "destination": "/api/preview-config.js"
+    },
+    {
+      "source": "/api/projects",
+      "destination": "/api/projects.js"
+    },
+    {
+      "source": "/api/download-zip",
+      "destination": "/api/download.js"
+    },
+    {
+      "source": "/api/github-export",
+      "destination": "/api/github-export.js"
+    },
+    {
+      "source": "/api/live-preview",
+      "destination": "/api/live-preview.js"
+    },
+    {
+      "source": "/api/generate-code",
+      "destination": "/api/code-generation.js"
+    },
+    {
+      "source": "/api/generate-native-code",
+      "destination": "/api/code-generation.js"
+    },
+    {
+      "source": "/api/generate-from-text",
+      "destination": "/api/code-generation.js"
+    },
+    {
+      "source": "/api/generate-android",
+      "destination": "/api/mobile-generation.js"
+    },
+    {
+      "source": "/api/generate-mcp",
+      "destination": "/api/code-generation.js"
+    },
+    {
+      "source": "/api/import-figma",
+      "destination": "/api/figma-integration.js"
+    },
+    {
+      "source": "/api/enhanced-figma-integration",
+      "destination": "/api/figma-integration.js"
+    },
+    {
+      "source": "/api/enhanced-code-generator",
+      "destination": "/api/code-generation.js"
+    },
+    {
+      "source": "/api/enhanced-live-preview",
+      "destination": "/api/live-preview.js"
+    },
+    {
+      "source": "/api/evaluator-agents",
+      "destination": "/api/evaluation.js"
+    },
+    {
+      "source": "/api/analyze-prompt",
+      "destination": "/api/code-generation.js"
+    },
+    {
+      "source": "/api/enhanced-api",
+      "destination": "/api/unified-api.js"
+    },
+    {
+      "source": "/api/mcp-server",
+      "destination": "/api/code-generation.js"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ]
 }

@@ -1,0 +1,96 @@
+.live-preview-container {
+    width: 100%;
+    min-height: 400px;
+}
+
+.preview-frame {
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    background: white;
+    min-height: 300px;
+    overflow: hidden;
+}
+
+.preview-content {
+    padding: 20px;
+    min-height: 300px;
+}
+
+.preview-content * {
+    max-width: 100%;
+}
+
+.preview-fallback {
+    padding: 20px;
+    min-height: 300px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Responsive design for the preview */
+@media (max-width: 768px) {
+    .preview-content {
+        padding: 15px;
+    }
+    
+    .preview-fallback {
+        padding: 15px;
+    }
+}
+
+/* Style the component info section */
+.live-preview-container .bg-gray-50 {
+    background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+    border: 1px solid #e5e7eb;
+}
+
+/* Add some basic styling for common elements in the preview */
+.preview-content h1,
+.preview-content h2,
+.preview-content h3,
+.preview-content h4,
+.preview-content h5,
+.preview-content h6 {
+    margin: 0 0 16px 0;
+    line-height: 1.2;
+}
+
+.preview-content p {
+    margin: 0 0 12px 0;
+    line-height: 1.5;
+}
+
+.preview-content button {
+    cursor: pointer;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.preview-content button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.preview-content input,
+.preview-content textarea,
+.preview-content select {
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 14px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.preview-content input:focus,
+.preview-content textarea:focus,
+.preview-content select:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+} 
