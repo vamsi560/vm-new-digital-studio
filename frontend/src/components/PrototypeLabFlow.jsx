@@ -844,35 +844,23 @@ Generated on: ${new Date().toISOString()}
                     <div className="flex items-center space-x-2">
                         <div className="flex space-x-1">
                             <button 
-                                onClick={() => setCurrentScreen(1)}
-                                className={`w-6 h-6 rounded-md border-2 flex items-center justify-center text-xs font-bold transition-all duration-300 transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-blue-400/50 ${
-                                    currentScreen === 1 
-                                        ? 'border-blue-400 text-blue-400 bg-blue-400/10 shadow-lg shadow-blue-400/20' 
-                                        : 'border-gray-600 text-gray-600 hover:border-gray-500 hover:text-gray-500'
-                                }`}
-                                aria-label="Go to screen 1"
+                                disabled
+                                className="w-6 h-6 rounded-md border-2 flex items-center justify-center text-xs font-bold transition-all duration-300 border-gray-500 text-gray-500 bg-gray-700/30 cursor-not-allowed opacity-50"
+                                aria-label="Screen 1 (disabled)"
                             >
                                 1
                             </button>
                             <button 
-                                onClick={() => setCurrentScreen(2)}
-                                className={`w-6 h-6 rounded-md border-2 flex items-center justify-center text-xs font-bold transition-all duration-300 transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-blue-400/50 ${
-                                    currentScreen === 2 
-                                        ? 'border-blue-400 text-blue-400 bg-blue-400/10 shadow-lg shadow-blue-400/20' 
-                                        : 'border-gray-600 text-gray-600 hover:border-gray-500 hover:text-gray-500'
-                                }`}
-                                aria-label="Go to screen 2"
+                                disabled
+                                className="w-6 h-6 rounded-md border-2 flex items-center justify-center text-xs font-bold transition-all duration-300 border-gray-500 text-gray-500 bg-gray-700/30 cursor-not-allowed opacity-50"
+                                aria-label="Screen 2 (disabled)"
                             >
                                 2
                             </button>
                             <button 
-                                onClick={() => setCurrentScreen(3)}
-                                className={`w-6 h-6 rounded-md border-2 flex items-center justify-center text-xs font-bold transition-all duration-300 transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-blue-400/50 ${
-                                    currentScreen === 3 
-                                        ? 'border-blue-400 text-blue-400 bg-blue-400/10 shadow-lg shadow-blue-400/20' 
-                                        : 'border-gray-600 text-gray-600 hover:border-gray-500 hover:text-gray-500'
-                                }`}
-                                aria-label="Go to screen 3"
+                                disabled
+                                className="w-6 h-6 rounded-md border-2 flex items-center justify-center text-xs font-bold transition-all duration-300 border-gray-500 text-gray-500 bg-gray-700/30 cursor-not-allowed opacity-50"
+                                aria-label="Screen 3 (disabled)"
                             >
                                 3
                             </button>
