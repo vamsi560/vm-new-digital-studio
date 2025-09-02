@@ -246,16 +246,191 @@ const PrototypeLabFlow = ({ onNavigate }) => {
         }
     };
 
-    const handleDownload = () => {
+    const handleDownload = async () => {
         if (!generatedProject) return;
         
-        const element = document.createElement('a');
-        const file = new Blob([generatedCode], { type: 'text/plain' });
-        element.href = URL.createObjectURL(file);
-        element.download = 'prototype-project.js';
-        document.body.appendChild(element);
-        element.click();
-        document.body.removeChild(element);
+        try {
+            // Create a complete project structure
+            const projectStructure = {
+                'package.json': JSON.stringify({
+                    name: "digital-studio-project",
+                    version: "1.0.0",
+                    private: true,
+                    dependencies: {
+                        "react": "^18.2.0",
+                        "react-dom": "^18.2.0",
+                        "tailwindcss": "^3.3.0"
+                    },
+                    devDependencies: {
+                        "@types/react": "^18.2.0",
+                        "@types/react-dom": "^18.2.0",
+                        "vite": "^4.0.0",
+                        "@vitejs/plugin-react": "^4.0.0",
+                        "autoprefixer": "^10.4.0",
+                        "postcss": "^8.4.0"
+                    },
+                    scripts: {
+                        "dev": "vite",
+                        "build": "vite build",
+                        "preview": "vite preview"
+                    }
+                }, null, 2),
+                'src/App.jsx': generatedCode,
+                'src/main.jsx': `import React from 'react'
+import ReactDOM from 'react-dom/client'
+import App from './App.jsx'
+import './index.css'
+
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>,
+)`,
+                'src/index.css': `@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  min-height: 100vh;
+}`,
+                'index.html': `<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Digital Studio Project</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>`,
+                'vite.config.js': `import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+
+export default defineConfig({
+  plugins: [react()],
+})`,
+                'tailwind.config.js': `/** @type {import('tailwindcss').Config} */
+export default {
+  content: [
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}",
+  ],
+  theme: {
+    extend: {},
+  },
+  plugins: [],
+}`,
+                'postcss.config.js': `export default {
+  plugins: {
+    tailwindcss: {},
+    autoprefixer: {},
+  },
+}`,
+                'README.md': `# Digital Studio Project
+
+This project was generated using Digital Studio VM.
+
+## Features
+- React framework
+- Tailwind CSS styling
+- Modern development setup
+- Responsive design
+
+## Getting Started
+
+1. Install dependencies:
+\`\`\`bash
+npm install
+\`\`\`
+
+2. Start development server:
+\`\`\`bash
+npm run dev
+\`\`\`
+
+3. Build for production:
+\`\`\`bash
+npm run build
+\`\`\`
+
+## Project Structure
+- \`src/\` - Source code
+- \`public/\` - Static assets
+- \`package.json\` - Dependencies and scripts
+
+Generated on: ${new Date().toISOString()}
+`,
+                '.gitignore': `# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?`
+            };
+
+            // Create a ZIP file
+            const zip = new JSZip();
+            
+            Object.entries(projectStructure).forEach(([path, content]) => {
+                zip.file(path, content);
+            });
+
+            // Generate ZIP file
+            const zipBlob = await zip.generateAsync({ type: 'blob' });
+            
+            // Create download link
+            const element = document.createElement('a');
+            element.href = URL.createObjectURL(zipBlob);
+            element.download = 'digital-studio-project.zip';
+            document.body.appendChild(element);
+            element.click();
+            document.body.removeChild(element);
+            
+            // Clean up
+            URL.revokeObjectURL(element.href);
+            
+            // Show success message
+            alert('Project downloaded successfully! To open in VS Code:\n\n1. Extract the ZIP file\n2. Open VS Code\n3. Go to File > Open Folder\n4. Select the extracted project folder\n\nOr use the command: code /path/to/extracted/folder');
+            
+        } catch (error) {
+            console.error('Error creating ZIP:', error);
+            alert('Error creating project ZIP. Please try again.');
+        }
     };
 
     // Open in VS Code function
@@ -294,6 +469,27 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     <App />
   </React.StrictMode>,
 )`,
+            'src/index.css': `@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  min-height: 100vh;
+}`,
             'index.html': `<!DOCTYPE html>
 <html lang="en">
   <head>

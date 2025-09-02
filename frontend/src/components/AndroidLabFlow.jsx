@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import FigmaImportModal from './FigmaImportModal';
 import GitHubImportModal from './GitHubImportModal';
+import JSZip from 'jszip';
 
 const AndroidLabFlow = ({ onNavigate }) => {
     const [currentScreen, setCurrentScreen] = useState(1);
@@ -237,16 +238,222 @@ const AndroidLabFlow = ({ onNavigate }) => {
         }
     };
 
-    const handleDownload = () => {
+    const handleDownload = async () => {
         if (!generatedProject) return;
         
-        const element = document.createElement('a');
-        const file = new Blob([generatedCode], { type: 'text/plain' });
-        element.href = URL.createObjectURL(file);
-        element.download = 'android-project.zip';
-        document.body.appendChild(element);
-        element.click();
-        document.body.removeChild(element);
+        try {
+            // Create a complete Android project structure
+            const projectStructure = {
+                'app/build.gradle': `plugins {
+    id 'com.android.application'
+    id 'org.jetbrains.kotlin.android'
+}
+
+android {
+    namespace 'com.example.androidapp'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.example.androidapp"
+        minSdk 24
+        targetSdk 34
+        versionCode 1
+        versionName "1.0"
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    kotlinOptions {
+        jvmTarget = '1.8'
+    }
+}
+
+dependencies {
+    implementation 'androidx.core:core-ktx:1.12.0'
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'com.google.android.material:material:1.11.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    testImplementation 'junit:junit:4.13.2'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.5'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
+}`,
+                'app/src/main/AndroidManifest.xml': `<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.AndroidApp">
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>`,
+                'app/src/main/java/com/example/androidapp/MainActivity.kt': generatedCode || `package com.example.androidapp
+
+import androidx.appcompat.app.AppCompatActivity
+import android.os.Bundle
+
+class MainActivity : AppCompatActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+    }
+}`,
+                'app/src/main/res/layout/activity_main.xml': `<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Hello World!"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>`,
+                'app/src/main/res/values/strings.xml': `<resources>
+    <string name="app_name">Android App</string>
+</resources>`,
+                'app/src/main/res/values/colors.xml': `<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="purple_200">#FFBB86FC</color>
+    <color name="purple_500">#FF6200EE</color>
+    <color name="purple_700">#FF3700B3</color>
+    <color name="teal_200">#FF03DAC5</color>
+    <color name="teal_700">#FF018786</color>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+</resources>`,
+                'app/src/main/res/values/themes.xml': `<resources xmlns:tools="http://schemas.android.com/tools">
+    <style name="Theme.AndroidApp" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
+        <item name="colorPrimary">@color/purple_500</item>
+        <item name="colorPrimaryVariant">@color/purple_700</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorSecondary">@color/teal_200</item>
+        <item name="colorSecondaryVariant">@color/teal_700</item>
+        <item name="colorOnSecondary">@color/black</item>
+        <item name="android:statusBarColor">?attr/colorPrimaryVariant</item>
+    </style>
+</resources>`,
+                'build.gradle': `buildscript {
+    ext.kotlin_version = '1.9.0'
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:8.1.0'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    }
+}
+
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}`,
+                'settings.gradle': `pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+rootProject.name = "AndroidApp"
+include ':app'`,
+                'gradle.properties': `org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8
+android.useAndroidX=true
+kotlin.code.style=official
+android.nonTransitiveRClass=true`,
+                'README.md': `# Android App
+
+This Android project was generated using Digital Studio VM.
+
+## Features
+- Kotlin programming language
+- Modern Android development setup
+- Material Design components
+- Responsive layout
+
+## Getting Started
+
+1. Open the project in Android Studio
+2. Sync Gradle files
+3. Build and run the project
+
+## Project Structure
+- \`app/src/main/java/\` - Kotlin source code
+- \`app/src/main/res/\` - Resources (layouts, strings, colors)
+- \`app/build.gradle\` - App-level build configuration
+
+Generated on: ${new Date().toISOString()}
+`
+            };
+
+            // Create a ZIP file
+            const zip = new JSZip();
+            
+            Object.entries(projectStructure).forEach(([path, content]) => {
+                zip.file(path, content);
+            });
+
+            // Generate ZIP file
+            const zipBlob = await zip.generateAsync({ type: 'blob' });
+            
+            // Create download link
+            const element = document.createElement('a');
+            element.href = URL.createObjectURL(zipBlob);
+            element.download = 'android-project.zip';
+            document.body.appendChild(element);
+            element.click();
+            document.body.removeChild(element);
+            
+            // Clean up
+            URL.revokeObjectURL(element.href);
+            
+            // Show success message
+            alert('Android project downloaded successfully! To open in Android Studio:\n\n1. Extract the ZIP file\n2. Open Android Studio\n3. Go to File > Open\n4. Select the extracted project folder');
+            
+        } catch (error) {
+            console.error('Error creating Android project ZIP:', error);
+            alert('Error creating Android project ZIP. Please try again.');
+        }
     };
 
     // GitHub connection functions

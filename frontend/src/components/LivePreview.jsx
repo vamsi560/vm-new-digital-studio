@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from 'react';
+import { LiveProvider, LivePreview as ReactLivePreview, LiveError } from 'react-live';
 import './LivePreview.css';
 
 const LivePreview = ({ code }) => {
     const [error, setError] = useState(null);
     const [previewContent, setPreviewContent] = useState(null);
+    const [parsedCode, setParsedCode] = useState('');
 
     useEffect(() => {
         if (!code) {
             setPreviewContent(null);
             setError(null);
+            setParsedCode('');
             return;
         }
 
@@ -19,7 +22,9 @@ const LivePreview = ({ code }) => {
                 const componentPatterns = [
                     /const\s+(\w+)\s*=\s*\(\)\s*=>\s*{([\s\S]*?)}/,
                     /function\s+(\w+)\s*\(\)\s*{([\s\S]*?)}/,
-                    /const\s+(\w+)\s*=\s*function\s*\(\)\s*{([\s\S]*?)}/
+                    /const\s+(\w+)\s*=\s*function\s*\(\)\s*{([\s\S]*?)}/,
+                    /const\s+(\w+)\s*=\s*\([^)]*\)\s*=>\s*{([\s\S]*?)}/,
+                    /function\s+(\w+)\s*\([^)]*\)\s*{([\s\S]*?)}/
                 ];
 
                 let componentName = 'GeneratedComponent';
@@ -34,7 +39,7 @@ const LivePreview = ({ code }) => {
                     }
                 }
 
-                // Extract JSX content from the component body - handle multiple formats
+                // Extract JSX content from the component body
                 let jsxContent = '';
                 let jsxMatch = null;
                 
@@ -66,7 +71,7 @@ const LivePreview = ({ code }) => {
                     }
                 }
                 
-                // Create a safe HTML representation
+                // Create a safe HTML representation for fallback
                 const createSafeHTML = (jsx) => {
                     // Convert JSX-like syntax to safe HTML
                     let html = jsx
@@ -86,23 +91,58 @@ const LivePreview = ({ code }) => {
 
                 const safeHTML = createSafeHTML(jsxContent);
                 
+                // Create clean React code for LiveProvider
+                const cleanReactCode = createCleanReactCode(componentName, componentBody, jsxContent);
+                
                 return {
                     componentName,
                     html: safeHTML,
-                    originalJSX: jsxContent
+                    originalJSX: jsxContent,
+                    cleanReactCode: cleanReactCode
                 };
             };
 
             const parsed = parseComponent();
             setPreviewContent(parsed);
+            setParsedCode(parsed.cleanReactCode);
             setError(null);
 
         } catch (err) {
             console.error('Error parsing component for preview:', err);
             setError(err.message);
             setPreviewContent(null);
+            setParsedCode('');
         }
     }, [code]);
+
+    // Create clean React code for LiveProvider
+    const createCleanReactCode = (componentName, componentBody, jsxContent) => {
+        // Extract imports if they exist
+        const importMatch = code.match(/import\s+.*?from\s+['"][^'"]+['"];?/g);
+        const imports = importMatch ? importMatch.join('\n') : '';
+        
+        // Create a clean component definition
+        let cleanCode = '';
+        
+        if (imports) {
+            cleanCode += imports + '\n\n';
+        }
+        
+        // Add React import if not present
+        if (!cleanCode.includes('import React')) {
+            cleanCode += "import React from 'react';\n\n";
+        }
+        
+        // Create the component
+        cleanCode += `const ${componentName} = () => {\n`;
+        cleanCode += `  return (\n`;
+        cleanCode += `    ${jsxContent}\n`;
+        cleanCode += `  );\n`;
+        cleanCode += `};\n\n`;
+        cleanCode += `export default ${componentName};`;
+        
+        return cleanCode;
+    };
 
     if (error) {
         return (
@@ -127,6 +167,37 @@ const LivePreview = ({ code }) => {
         );
     }
 
+    // Try to use React Live for better preview
+    if (parsedCode && parsedCode.includes('return')) {
+        try {
+            return (
+                <div className="live-preview-container">
+                    {/* Component Info */}
+                    <div className="mb-4 p-3 bg-gray-50 rounded-lg border">
+                        <h3 className="text-sm font-semibold text-gray-700 mb-1">
+                            {previewContent.componentName}
+                        </h3>
+                        <p className="text-xs text-gray-500">Generated React Component (Live Preview)</p>
+                    </div>
+
+                    {/* React Live Preview */}
+                    <div className="preview-frame">
+                        <LiveProvider code={parsedCode} noInline={true} scope={{ React }}>
+                            <div className="preview-content">
+                                <ReactLivePreview />
+                            </div>
+                            <LiveError className="text-red-400 text-xs p-2 bg-red-50 rounded mt-2" />
+                        </LiveProvider>
+                    </div>
+                </div>
+            );
+        } catch (liveError) {
+            console.warn('React Live failed, falling back to HTML preview:', liveError);
+            // Fall through to HTML preview
+        }
+    }
+
+    // Fallback to HTML preview
     return (
         <div className="live-preview-container">
             {/* Component Info */}
@@ -134,10 +205,10 @@ const LivePreview = ({ code }) => {
                 <h3 className="text-sm font-semibold text-gray-700 mb-1">
                     {previewContent.componentName}
                 </h3>
-                <p className="text-xs text-gray-500">Generated React Component</p>
+                <p className="text-xs text-gray-500">Generated React Component (HTML Preview)</p>
             </div>
 
-            {/* Live Preview */}
+            {/* HTML Preview */}
             <div className="preview-frame">
                 <div 
                     className="preview-content"
@@ -157,6 +228,13 @@ const LivePreview = ({ code }) => {
                     </div>
                 </div>
             )}
+
+            {/* Debug Info */}
+            <div className="mt-4 p-3 bg-gray-100 rounded text-xs text-gray-600">
+                <p><strong>Debug:</strong> Component: {previewContent.componentName}</p>
+                <p><strong>Code Length:</strong> {code ? code.length : 0} characters</p>
+                <p><strong>Preview Type:</strong> HTML Fallback</p>
+            </div>
         </div>
     );
 };
