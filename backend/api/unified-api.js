@@ -1,7 +1,7 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import multer from 'multer';
 import cors from 'cors';
 import JSZip from 'jszip';
+import HuggingFaceAI from './huggingface-ai.js';
 
 // CORS configuration
 const corsMiddleware = cors({
@@ -9,8 +9,8 @@ const corsMiddleware = cors({
   credentials: true
 });
 
-// Initialize Gemini AI model
-const gemini = new GoogleGenerativeAI("AIzaSyBcR6rMwP9v8e2cN56gdnkWMhJtOWyP_uU");
+// Initialize Hugging Face AI
+const huggingFaceAI = new HuggingFaceAI();
 
 // Configure multer for file uploads
 const upload = multer({
@@ -174,8 +174,8 @@ export default SampleComponent;`;
       routing: formData.body.routing || ''
     };
 
-    // Generate code using Gemini AI
-    const generatedCode = await generateWithGemini(images, options);
+    // Generate code using Hugging Face AI
+    const generatedCode = await generateWithHuggingFace(images, options);
     
     const projectId = `project-${Date.now()}`;
     
@@ -247,7 +247,7 @@ async function handleFigmaImport(req, res) {
       architecture: architecture || 'Component Based'
     };
 
-    const generatedCode = await generateWithGemini(images, options);
+    const generatedCode = await generateWithHuggingFace(images, options);
     
     const projectId = `figma-project-${Date.now()}`;
     
@@ -889,45 +889,105 @@ async function handleEnhancedAPI(req, res) {
 }
 
 // Helper functions
-async function generateWithGemini(images, options) {
-  const prompt = buildCodePrompt(images, options);
-  const model = gemini.getGenerativeModel({ model: 'gemini-1.5-flash' });
-  
-  const imageParts = images.map(img => ({
-    inlineData: {
-      data: img.data,
-      mimeType: img.mimeType || 'image/png'
+async function generateWithHuggingFace(images, options) {
+  try {
+    // Since Hugging Face doesn't handle images directly, we'll create a descriptive prompt
+    // based on the number of screens and options, then generate appropriate code
+    const prompt = buildCodePrompt(images, options);
+    
+    // Use Hugging Face AI for code generation
+    const result = await huggingFaceAI.generateCode(prompt, options);
+    
+    if (result.success) {
+      return result.code;
+    } else {
+      throw new Error('Hugging Face generation failed');
     }
-  }));
-
-  const result = await model.generateContent([prompt, ...imageParts]);
-  return result.response.text();
+  } catch (error) {
+    console.error('Hugging Face generation error:', error);
+    // Fallback to basic code generation
+    return generateFallbackCode(images, options);
+  }
 }
 
 function buildCodePrompt(images, options) {
   const { platform, framework, styling, architecture, customLogic, routing } = options;
+  const screenCount = images.length;
   
-  return `
-Generate pixel-perfect ${framework} code for the provided UI screens.
+  return `Generate pixel-perfect ${framework} code for a ${screenCount}-screen application.
 
 Requirements:
 - Platform: ${platform}
 - Framework: ${framework}
 - Styling: ${styling}
 - Architecture: ${architecture}
+- Number of Screens: ${screenCount}
 - Custom Logic: ${customLogic || 'None'}
 - Routing: ${routing || 'None'}
 
 Instructions:
-1. Analyze the provided images carefully
-2. Generate responsive, accessible code
-3. Follow best practices for ${framework}
-4. Include proper error handling
+1. Create a ${screenCount}-screen ${framework} application
+2. Generate responsive, accessible code using ${styling}
+3. Follow ${architecture} architecture patterns
+4. Include proper error handling and loading states
 5. Add comprehensive comments
-6. Make it production-ready
+6. Make it production-ready with proper file structure
+7. Include navigation between screens
+8. Use modern ${framework} best practices
 
-Return only the complete component code without explanations.
-  `;
+Generate the complete application structure including:
+- Main App component
+- Individual screen components
+- Navigation/routing setup
+- Styling files
+- Package.json dependencies
+
+Return only the complete, runnable code without explanations.`;
+}
+
+function generateFallbackCode(images, options) {
+  const { platform, framework, styling, architecture } = options;
+  
+  if (framework === 'React') {
+    return `import React from 'react';
+
+const GeneratedComponent = () => {
+  return (
+    <div className="min-h-screen bg-gray-100">
+      <header className="bg-white shadow-sm border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-4">
+            <h1 className="text-2xl font-bold text-gray-900">Generated App</h1>
+            <nav className="flex space-x-4">
+              <a href="#" className="text-gray-500 hover:text-gray-700">Home</a>
+              <a href="#" className="text-gray-500 hover:text-gray-700">About</a>
+              <a href="#" className="text-gray-500 hover:text-gray-700">Contact</a>
+            </nav>
+          </div>
+        </div>
+      </header>
+      
+      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <div className="px-4 py-6 sm:px-0">
+          <div className="border-4 border-dashed border-gray-200 rounded-lg h-96 flex items-center justify-center">
+            <div className="text-center">
+              <h2 className="text-xl font-semibold text-gray-600 mb-2">Generated Component</h2>
+              <p className="text-gray-500">This is a fallback component generated when AI analysis is unavailable.</p>
+              <p className="text-sm text-gray-400 mt-2">Framework: ${framework} | Styling: ${styling} | Architecture: ${architecture}</p>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+};
+
+export default GeneratedComponent;`;
+  }
+  
+  return `// Fallback code for ${framework} with ${styling}
+// This component was generated as a fallback when AI analysis was unavailable.
+// Please check your API configuration and try again.`;
 }
 
 function extractFigmaFileKey(figmaUrl) {

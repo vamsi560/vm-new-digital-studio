@@ -40,21 +40,21 @@ class HuggingFaceAI {
     // Best model for UI code generation: WizardCoder-15B-V1.0
     // This model is specifically trained for code generation and excels at UI components
     if (platform === 'web' && framework === 'React') {
-      return HUGGINGFACE_MODELS.wizardcoder15b;
+      return HUGGINGFACE_MODELS.wizardcoder15b.modelId;
     }
     
     // For other web frameworks, use CodeLlama-13b-hf (excellent general code generation)
     if (platform === 'web') {
-      return HUGGINGFACE_MODELS.codellama13b;
+      return HUGGINGFACE_MODELS.codellama13b.modelId;
     }
     
     // For mobile development, use DeepSeek-Coder-6.7B-Instruct (great for platform-specific code)
     if (platform === 'android' || platform === 'ios') {
-      return HUGGINGFACE_MODELS.deepseekCoder67b;
+      return HUGGINGFACE_MODELS.deepseekCoder67b.modelId;
     }
     
     // Default to WizardCoder for best UI generation
-    return HUGGINGFACE_MODELS.wizardcoder15b;
+    return HUGGINGFACE_MODELS.wizardcoder15b.modelId;
   }
 
   async generateWithHuggingFace(prompt, model, options) {
@@ -238,7 +238,7 @@ struct GeneratedView_Previews: PreviewProvider {
 
     try {
       // Test with a simple model
-      const response = await fetch(`${this.baseUrl}/${HUGGINGFACE_MODELS.codellama7b}`, {
+      const response = await fetch(`${this.baseUrl}/${HUGGINGFACE_MODELS.codellama7b.modelId}`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${this.apiToken}`,
