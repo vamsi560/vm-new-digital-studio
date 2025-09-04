@@ -179,9 +179,13 @@ export default SampleComponent;`;
     
     const projectId = `project-${Date.now()}`;
     
+    // Generate additional project files
+    const projectFiles = generateProjectFiles(generatedCode, options);
+    
     res.json({
       success: true,
       mainCode: generatedCode,
+      projectFiles: projectFiles,
       qualityScore: { overall: 8, codeQuality: 8, performance: 8, accessibility: 8, security: 8 },
       analysis: { analysis: 'Generated component analysis' },
       projectId,
@@ -891,20 +895,29 @@ async function handleEnhancedAPI(req, res) {
 // Helper functions
 async function generateWithHuggingFace(images, options) {
   try {
+    console.log('🤖 Attempting Hugging Face code generation...');
+    console.log('📊 Options:', options);
+    console.log('🖼️  Images count:', images.length);
+    
     // Since Hugging Face doesn't handle images directly, we'll create a descriptive prompt
     // based on the number of screens and options, then generate appropriate code
     const prompt = buildCodePrompt(images, options);
+    console.log('📝 Generated prompt:', prompt.substring(0, 200) + '...');
     
     // Use Hugging Face AI for code generation
     const result = await huggingFaceAI.generateCode(prompt, options);
+    console.log('✅ Hugging Face result:', result);
     
     if (result.success) {
+      console.log('🎉 Hugging Face generation successful!');
       return result.code;
     } else {
+      console.log('❌ Hugging Face generation failed:', result);
       throw new Error('Hugging Face generation failed');
     }
   } catch (error) {
-    console.error('Hugging Face generation error:', error);
+    console.error('💥 Hugging Face generation error:', error);
+    console.log('🔄 Falling back to generated code...');
     // Fallback to basic code generation
     return generateFallbackCode(images, options);
   }
@@ -947,47 +960,444 @@ Return only the complete, runnable code without explanations.`;
 
 function generateFallbackCode(images, options) {
   const { platform, framework, styling, architecture } = options;
+  const screenCount = images.length || 3; // Default to 3 screens if no images
+  
+  console.log('🔄 Generating fallback code with options:', options);
+  console.log('📱 Screen count:', screenCount);
+  console.log('🎨 Framework:', framework);
+  console.log('💅 Styling:', styling);
   
   if (framework === 'React') {
-    return `import React from 'react';
+    return `// Multi-Screen React Application
+// Generated with ${styling} and ${architecture} architecture
+// Number of screens: ${screenCount}
 
-const GeneratedComponent = () => {
+// App.jsx - Main Application Component
+import React, { useState } from 'react';
+import './styles/App.css';
+
+function App() {
+  const [currentScreen, setCurrentScreen] = useState(0);
+  
+  const screens = [
+    { id: 0, name: 'Home', component: <HomeScreen /> },
+    { id: 1, name: 'Features', component: <FeaturesScreen /> },
+    { id: 2, name: 'Contact', component: <ContactScreen /> }
+  ];
+  
   return (
-    <div className="min-h-screen bg-gray-100">
-      <header className="bg-white shadow-sm border-b border-gray-200">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      {/* Navigation Header */}
+      <header className="bg-white shadow-lg border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
-            <h1 className="text-2xl font-bold text-gray-900">Generated App</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Digital Studio App</h1>
             <nav className="flex space-x-4">
-              <a href="#" className="text-gray-500 hover:text-gray-700">Home</a>
-              <a href="#" className="text-gray-500 hover:text-gray-700">About</a>
-              <a href="#" className="text-gray-500 hover:text-gray-700">Contact</a>
+              {screens.map((screen) => (
+                <button
+                  key={screen.id}
+                  onClick={() => setCurrentScreen(screen.id)}
+                  className={\`px-4 py-2 rounded-lg font-medium transition-colors \${
+                    currentScreen === screen.id
+                      ? 'bg-blue-600 text-white'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                  }\`}
+                >
+                  {screen.name}
+                </button>
+              ))}
             </nav>
           </div>
         </div>
       </header>
       
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="px-4 py-6 sm:px-0">
-          <div className="border-4 border-dashed border-gray-200 rounded-lg h-96 flex items-center justify-center">
-            <div className="text-center">
-              <h2 className="text-xl font-semibold text-gray-600 mb-2">Generated Component</h2>
-              <p className="text-gray-500">This is a fallback component generated when AI analysis is unavailable.</p>
-              <p className="text-sm text-gray-400 mt-2">Framework: ${framework} | Styling: ${styling} | Architecture: ${architecture}</p>
-            </div>
-          </div>
-        </div>
+      {/* Main Content Area */}
+      <main className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+        {screens[currentScreen].component}
       </main>
     </div>
   );
-};
+}
 
-export default GeneratedComponent;`;
+// Screen 1: Home Screen
+function HomeScreen() {
+  return (
+    <div className="text-center">
+      <h2 className="text-4xl font-bold text-gray-900 mb-6">Welcome to Digital Studio</h2>
+      <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
+        A modern, responsive React application built with ${styling} and following ${architecture} patterns.
+      </p>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+        <div className="bg-white p-6 rounded-xl shadow-md">
+          <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+            <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+          </div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Fast Performance</h3>
+          <p className="text-gray-600">Optimized for speed and efficiency</p>
+        </div>
+        <div className="bg-white p-6 rounded-xl shadow-md">
+          <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+            <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+            </svg>
+          </div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Responsive Design</h3>
+          <p className="text-gray-600">Works perfectly on all devices</p>
+        </div>
+        <div className="bg-white p-6 rounded-xl shadow-md">
+          <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+            <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Modern UI</h3>
+          <p className="text-gray-600">Built with the latest design trends</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Screen 2: Features Screen
+function FeaturesScreen() {
+  return (
+    <div className="max-w-4xl mx-auto">
+      <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">Features & Capabilities</h2>
+      <div className="space-y-6">
+        <div className="bg-white p-6 rounded-xl shadow-md">
+          <h3 className="text-xl font-semibold text-gray-900 mb-3">Component-Based Architecture</h3>
+          <p className="text-gray-600 mb-4">
+            Built using modern React patterns with reusable components that are easy to maintain and extend.
+          </p>
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <code className="text-sm text-gray-800">
+              {/* Example component structure */}
+              &lt;ComponentName prop={value} /&gt;
+              &lt;AnotherComponent /&gt;
+            </code>
+          </div>
+        </div>
+        <div className="bg-white p-6 rounded-xl shadow-md">
+          <h3 className="text-xl font-semibold text-gray-900 mb-3">Tailwind CSS Styling</h3>
+          <p className="text-gray-600 mb-4">
+            Modern utility-first CSS framework for rapid UI development with consistent design tokens.
+          </p>
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <code className="text-sm text-gray-800">
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg"
+            </code>
+          </div>
+        </div>
+        <div className="bg-white p-6 rounded-xl shadow-md">
+          <h3 className="text-xl font-semibold text-gray-900 mb-3">Responsive Navigation</h3>
+          <p className="text-gray-600 mb-4">
+            Smooth transitions between screens with state management and proper routing.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Screen 3: Contact Screen
+function ContactScreen() {
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    message: ''
+  });
+  
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    console.log('Form submitted:', formData);
+    // Handle form submission here
+  };
+  
+  return (
+    <div className="max-w-2xl mx-auto">
+      <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">Get in Touch</h2>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div>
+          <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+            Name
+          </label>
+          <input
+            type="text"
+            id="name"
+            value={formData.name}
+            onChange={(e) => setFormData({...formData, name: e.target.value})}
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            placeholder="Your name"
+            required
+          />
+        </div>
+        <div>
+          <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+            Email
+          </label>
+          <input
+            type="email"
+            id="email"
+            value={formData.email}
+            onChange={(e) => setFormData({...formData, email: e.target.value})}
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            placeholder="your.email@example.com"
+            required
+          />
+        </div>
+        <div>
+          <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-2">
+            Message
+          </label>
+          <textarea
+            id="message"
+            value={formData.message}
+            rows={4}
+            onChange={(e) => setFormData({...formData, message: e.target.value})}
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            placeholder="Your message..."
+            required
+          />
+        </div>
+        <button
+          type="submit"
+          className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+        >
+          Send Message
+        </button>
+      </form>
+    </div>
+  );
+}
+
+export default App;
+
+// Note: This code was generated as a fallback when AI analysis was unavailable.
+// It provides a complete, runnable React application with multiple screens,
+// proper navigation, and modern styling using ${styling}.`;
   }
   
   return `// Fallback code for ${framework} with ${styling}
 // This component was generated as a fallback when AI analysis was unavailable.
 // Please check your API configuration and try again.`;
+}
+
+function generateProjectFiles(mainCode, options) {
+  const { framework, styling } = options;
+  
+  const files = {
+    'package.json': generatePackageJson(framework, styling),
+    'src/App.jsx': mainCode,
+    'src/styles/App.css': generateCSS(styling),
+    'README.md': generateReadme(framework, styling, options)
+  };
+  
+  if (styling === 'Tailwind CSS') {
+    files['tailwind.config.js'] = generateTailwindConfig();
+    files['postcss.config.js'] = generatePostCSSConfig();
+  }
+  
+  return files;
+}
+
+function generatePackageJson(framework, styling) {
+  const dependencies = {
+    'react': '^18.2.0',
+    'react-dom': '^18.2.0'
+  };
+  
+  if (styling === 'Tailwind CSS') {
+    dependencies['tailwindcss'] = '^3.3.0';
+    dependencies['autoprefixer'] = '^10.4.14';
+    dependencies['postcss'] = '^8.4.24';
+  }
+  
+  return JSON.stringify({
+    name: 'digital-studio-app',
+    version: '1.0.0',
+    description: 'Generated React application with modern architecture',
+    main: 'src/index.js',
+    scripts: {
+      start: 'react-scripts start',
+      build: 'react-scripts build',
+      test: 'react-scripts test',
+      eject: 'react-scripts eject'
+    },
+    dependencies,
+    devDependencies: {
+      'react-scripts': '5.0.1'
+    },
+    browserslist: {
+      production: [
+        '>0.2%',
+        'not dead',
+        'not op_mini all'
+      ],
+      development: [
+        'last 1 chrome version',
+        'last 1 firefox version',
+        'last 1 safari version'
+      ]
+    }
+  }, null, 2);
+}
+
+function generateCSS(styling) {
+  if (styling === 'Tailwind CSS') {
+    return `@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom styles can be added here */
+.custom-button {
+  @apply bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors;
+}
+
+.custom-card {
+  @apply bg-white rounded-xl shadow-md p-6;
+}`;
+  }
+  
+  return `/* Custom CSS for ${styling} */
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}`;
+}
+
+function generateReadme(framework, styling, options) {
+  return `# Digital Studio App
+
+A modern, responsive ${framework} application built with ${styling} and following ${options.architecture} architecture patterns.
+
+## Features
+
+- **Multi-screen navigation** with smooth transitions
+- **Responsive design** that works on all devices
+- **Modern UI components** built with best practices
+- **Component-based architecture** for maintainability
+- **${styling} styling** for consistent design
+
+## Getting Started
+
+1. Install dependencies:
+   \`\`\`bash
+   npm install
+   \`\`\`
+
+2. Start the development server:
+   \`\`\`bash
+   npm start
+   \`\`\`
+
+3. Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+## Project Structure
+
+- \`src/App.jsx\` - Main application component
+- \`src/styles/App.css\` - Styling and CSS
+- \`package.json\` - Dependencies and scripts
+
+## Technologies Used
+
+- **Framework**: ${framework}
+- **Styling**: ${styling}
+- **Architecture**: ${options.architecture}
+- **Build Tool**: Create React App
+
+## Available Scripts
+
+- \`npm start\` - Runs the app in development mode
+- \`npm run build\` - Builds the app for production
+- \`npm test\` - Launches the test runner
+- \`npm run eject\` - Ejects from Create React App
+
+## Learn More
+
+To learn more about the technologies used:
+
+- [${framework} Documentation](https://reactjs.org/)
+- [${styling} Documentation](https://tailwindcss.com/)
+- [Create React App Documentation](https://facebook.github.io/create-react-app/docs/getting-started)
+
+## Deployment
+
+This app can be deployed to any static hosting service:
+
+- Vercel
+- Netlify
+- GitHub Pages
+- AWS S3
+
+## License
+
+MIT License - feel free to use this project for your own applications!
+`;
+}
+
+function generateTailwindConfig() {
+  return `/** @type {import('tailwindcss').Config} */
+module.exports = {
+  content: [
+    "./src/**/*.{js,jsx,ts,tsx}",
+  ],
+  theme: {
+    extend: {
+      colors: {
+        primary: {
+          50: '#eff6ff',
+          100: '#dbeafe',
+          200: '#bfdbfe',
+          300: '#93c5fd',
+          400: '#60a5fa',
+          500: '#3b82f6',
+          600: '#2563eb',
+          700: '#1d4ed8',
+          800: '#1e40af',
+          900: '#1e3a8a',
+        }
+      },
+      fontFamily: {
+        sans: ['Inter', 'system-ui', 'sans-serif'],
+      },
+      animation: {
+        'fade-in': 'fadeIn 0.5s ease-in-out',
+        'slide-up': 'slideUp 0.3s ease-out',
+      },
+      keyframes: {
+        fadeIn: {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
+        },
+        slideUp: {
+          '0%': { transform: 'translateY(10px)', opacity: '0' },
+          '100%': { transform: 'translateY(0)', opacity: '1' },
+        },
+      },
+    },
+  },
+  plugins: [],
+}`;
+}
+
+function generatePostCSSConfig() {
+  return `module.exports = {
+  plugins: {
+    tailwindcss: {},
+    autoprefixer: {},
+  },
+}`;
 }
 
 function extractFigmaFileKey(figmaUrl) {
